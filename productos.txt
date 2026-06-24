@@ -1,0 +1,47 @@
+1,Leche condensada,40,4.5,Leche evaporada tarro,4,1
+2,Queso Fresco,10,12.0,,4,1
+3,Arroz Costeño,94,5.2,Arroz extra superior,5,1
+4,Azucar Rubia,80,4.0,,5,1
+5,Detergente Ariel,34,18.5,Detergente en polvo 2kg,6,1
+6,Lejia Sapolio,35,3.8,,6,1
+7,Nuggets de Pollo,20,14.9,Nuggets congelados bolsa,7,1
+8,Helado Donofrio,15,8.5,,7,1
+9,Shampoo Head&Shoulders,30,16.0,Shampoo anticaspa,8,1
+10,Jabon Dove,45,4.2,,8,1
+11,Pan Frances,100,0.3,Pan fresco unidad,9,1
+12,Torta Chocolate,10,35.0,,9,1
+13,Manzana Roja,60,3.5,Manzana fresca por kilo,10,1
+14,Platano Seda,70,2.8,,10,1
+15,Carne de Res,25,24.0,Carne fresca premium,11,1
+16,Pollo Entero,30,18.5,,11,1
+17,Jamon Ingles,20,7.5,Jamon en paquete,12,1
+18,Salchicha Braedt,25,9.8,,12,1
+19,Atun Florida,40,6.5,Atun en aceite,13,1
+20,Durazno en Almibar,18,7.2,,13,1
+21,Cerveza Cristal,50,6.0,Cerveza botella 620ml,14,1
+22,Vino Tabernero,15,22.0,,14,1
+23,Escoba Rey,12,15.0,Escoba para hogar,15,1
+24,Balde Plastico,18,12.5,,15,1
+25,Dog Chow,20,18.9,Comida para perro 1kg,16,1
+26,Gati,15,16.5,,16,1
+27,Avena Quaker,30,5.5,Avena instantanea,17,1
+28,Chocapic,25,14.0,,17,1
+29,Yogurt Gloria,40,7.5,Yogurt fresa 1L,18,1
+30,Yogurt Griego,14,9.5,,18,1
+31,Helado Sublime,20,3.5,Helado de chocolate,19,1
+32,Spaghetti Nicolini,60,4.8,,20,1
+33,Ketchup Alacena,25,6.2,Salsa ketchup 500g,21,1
+34,Cafe Altomayo,20,15.5,,22,1
+35,Cuaderno Standford,50,7.0,Cuaderno universitario,23,1
+36,Huevo Pardos,86,0.7,,24,1
+37,Queso Edam,15,18.0,Queso edam por kilo,25,1
+38,Detergente Bolivar,35,18.0,,26,1
+39,Papel Higienico Elite,40,9.9,Papel higienico pack,27,1
+40,Jabon Bolivar,30,3.2,,28,1
+41,Agua San Luis,99,2.5,Agua mineral 625ml,29,1
+42,Harina Blanca Flor,45,4.6,,30,1
+43,Conserva de Frejoles,20,5.8,Frejoles enlatados,31,1
+44,Caramelos Mentos,50,1.5,,32,1
+45,Miel de Abeja,12,18.0,Miel natural pura,33,1
+46,Red Bull,23,9.5,,34,1
+47,Lentejas Costeño,40,6.0,Lentejas embolsadas 1kg,35,1

@@ -1,0 +1,297 @@
+package Vista;
+
+import Vista.Estilos.UIKit;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+
+public class IFrmRegistroCompras extends JInternalFrame {
+
+    private JComboBox<String> cbProveedor;
+    private JTextField txtDocumento;
+    private JTextField txtFecha;
+
+    private JTextField txtCodProducto;
+    private JTextField txtProductoNombre;
+    private JTextField txtCantidad;
+    private JTextField txtPrecioUnitario;
+    private JTextField txtLote;
+    private JTextField txtVencimiento;
+
+    private JTable tblDetalle;
+    private DefaultTableModel modelDetalle;
+    private JLabel lblSubtotal;
+    private JLabel lblIgv;
+    private JLabel lblTotal;
+
+    private JButton btnAgregarProducto;
+    private JButton btnQuitarProducto;
+    private JButton btnRegistrarCompra;
+    private JButton btnLimpiar;
+
+    public IFrmRegistroCompras() {
+        super("Registro de Compras", true, true, true, true);
+        initComponents();
+        buildLayout();
+        attachEvents();
+        setSize(1000, 650);
+        putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
+    }
+
+    private void initComponents() {
+        cbProveedor = new JComboBox<>(new String[]{"Seleccione proveedor", "Distribuidora del Sur", "Grupo Alimenticio SAC", "Corporación Norte"});
+        cbProveedor.setFont(UIKit.BODY);
+        
+        txtDocumento = UIKit.textField();
+        txtFecha = UIKit.textField();
+
+        txtCodProducto = UIKit.textField();
+        
+        txtProductoNombre = UIKit.readOnlyField();
+        
+        txtCantidad = UIKit.textField();
+        txtCantidad.setText("1");
+        txtCantidad.setHorizontalAlignment(JTextField.RIGHT);
+        
+        txtPrecioUnitario = UIKit.textField();
+        txtPrecioUnitario.setHorizontalAlignment(JTextField.RIGHT);
+        
+        txtLote = UIKit.textField();
+        txtVencimiento = UIKit.textField();
+        txtVencimiento.putClientProperty("JTextField.placeholderText", "AAAA-MM-DD");
+
+        String[] columns = {"Código", "Producto", "Cant", "P. Unit", "Subtotal", "Lote", "Vencimiento"};
+        modelDetalle = new DefaultTableModel(columns, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
+        };
+        tblDetalle = UIKit.styledTable(modelDetalle);
+
+        lblSubtotal = new JLabel("S/ 0.00");
+        lblSubtotal.setFont(UIKit.BODY_BOLD);
+        
+        lblIgv = new JLabel("S/ 0.00");
+        lblIgv.setFont(UIKit.BODY_BOLD);
+        
+        lblTotal = new JLabel("S/ 0.00");
+        lblTotal.setFont(UIKit.H1);
+        lblTotal.setForeground(UIKit.ACCENT);
+
+        btnAgregarProducto = UIKit.secondaryButton("Agregar Producto");
+        btnQuitarProducto = UIKit.dangerOutlineButton("Quitar");
+
+        btnRegistrarCompra = UIKit.primaryButton("Registrar Compra");
+        btnRegistrarCompra.setPreferredSize(new Dimension(0, 44));
+
+        btnLimpiar = UIKit.secondaryButton("Limpiar");
+    }
+
+    private void buildLayout() {
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().setBackground(UIKit.BG_APP);
+        ((JComponent) getContentPane()).setBorder(new EmptyBorder(
+                UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
+
+        // ===== Encabezado =====
+        getContentPane().add(
+                UIKit.screenHeader("Registro de Compras", "Compras  ›  Ingreso de Mercadería"),
+                BorderLayout.NORTH);
+
+        JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
+        cuerpo.setOpaque(false);
+
+        // ── Izquierda (Datos y Detalle) ──
+        JPanel pnlIzquierda = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
+        pnlIzquierda.setOpaque(false);
+
+        // Cabecera de Compra
+        JPanel pnlCabecera = UIKit.card();
+        pnlCabecera.setLayout(new GridBagLayout());
+        GridBagConstraints gbcC = new GridBagConstraints();
+        gbcC.fill = GridBagConstraints.HORIZONTAL;
+        gbcC.weightx = 1.0;
+        
+        gbcC.gridx = 0; gbcC.gridy = 0;
+        gbcC.gridwidth = 3;
+        gbcC.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
+        pnlCabecera.add(UIKit.sectionHeader("Datos del Comprobante", null), gbcC);
+
+        gbcC.gridy = 1;
+        gbcC.gridwidth = 1;
+        gbcC.insets = new Insets(0, 0, UIKit.SPACE_XS, UIKit.SPACE_SM);
+        pnlCabecera.add(UIKit.fieldLabel("Proveedor"), gbcC);
+        
+        gbcC.gridx = 1;
+        pnlCabecera.add(UIKit.fieldLabel("Documento"), gbcC);
+        
+        gbcC.gridx = 2;
+        gbcC.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
+        pnlCabecera.add(UIKit.fieldLabel("Fecha"), gbcC);
+        
+        gbcC.gridy = 2;
+        gbcC.gridx = 0;
+        gbcC.insets = new Insets(0, 0, 0, UIKit.SPACE_SM);
+        pnlCabecera.add(cbProveedor, gbcC);
+        
+        gbcC.gridx = 1;
+        pnlCabecera.add(txtDocumento, gbcC);
+        
+        gbcC.gridx = 2;
+        gbcC.insets = new Insets(0, 0, 0, 0);
+        pnlCabecera.add(txtFecha, gbcC);
+
+        pnlIzquierda.add(pnlCabecera, BorderLayout.NORTH);
+
+        // Agregar Productos
+        JPanel pnlDetalle = UIKit.card();
+        pnlDetalle.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
+        pnlDetalle.add(UIKit.sectionHeader("Detalle de Mercadería", btnQuitarProducto), BorderLayout.NORTH);
+        
+        JPanel pnlFormProd = new JPanel(new GridBagLayout());
+        pnlFormProd.setOpaque(false);
+        GridBagConstraints gbcP = new GridBagConstraints();
+        gbcP.fill = GridBagConstraints.HORIZONTAL;
+        gbcP.insets = new Insets(0, 0, UIKit.SPACE_SM, UIKit.SPACE_SM);
+        
+        // Fila 1
+        gbcP.gridy = 0;
+        gbcP.gridx = 0; gbcP.weightx = 0.2; pnlFormProd.add(UIKit.fieldLabel("Código"), gbcP);
+        gbcP.gridx = 1; gbcP.weightx = 0.4; pnlFormProd.add(UIKit.fieldLabel("Producto"), gbcP);
+        gbcP.gridx = 2; gbcP.weightx = 0.1; pnlFormProd.add(UIKit.fieldLabel("Cant"), gbcP);
+        gbcP.gridx = 3; gbcP.weightx = 0.1; gbcP.insets = new Insets(0, 0, UIKit.SPACE_SM, 0); pnlFormProd.add(UIKit.fieldLabel("P. Unit"), gbcP);
+        
+        gbcP.gridy = 1;
+        gbcP.insets = new Insets(0, 0, UIKit.SPACE_MD, UIKit.SPACE_SM);
+        gbcP.gridx = 0; pnlFormProd.add(txtCodProducto, gbcP);
+        gbcP.gridx = 1; pnlFormProd.add(txtProductoNombre, gbcP);
+        gbcP.gridx = 2; pnlFormProd.add(txtCantidad, gbcP);
+        gbcP.gridx = 3; gbcP.insets = new Insets(0, 0, UIKit.SPACE_MD, 0); pnlFormProd.add(txtPrecioUnitario, gbcP);
+
+        // Fila 2
+        gbcP.gridy = 2;
+        gbcP.insets = new Insets(0, 0, UIKit.SPACE_XS, UIKit.SPACE_SM);
+        gbcP.gridx = 0; pnlFormProd.add(UIKit.fieldLabel("Lote"), gbcP);
+        gbcP.gridx = 1; pnlFormProd.add(UIKit.fieldLabel("Vencimiento"), gbcP);
+        
+        gbcP.gridy = 3;
+        gbcP.insets = new Insets(0, 0, UIKit.SPACE_SM, UIKit.SPACE_SM);
+        gbcP.gridx = 0; pnlFormProd.add(txtLote, gbcP);
+        gbcP.gridx = 1; pnlFormProd.add(txtVencimiento, gbcP);
+        
+        gbcP.gridx = 2;
+        gbcP.gridwidth = 2;
+        gbcP.insets = new Insets(0, 0, UIKit.SPACE_SM, 0);
+        pnlFormProd.add(btnAgregarProducto, gbcP);
+        
+        JPanel pnlBody = new JPanel(new BorderLayout(0, UIKit.SPACE_SM));
+        pnlBody.setOpaque(false);
+        pnlBody.add(pnlFormProd, BorderLayout.NORTH);
+        
+        JScrollPane scroll = new JScrollPane(tblDetalle);
+        scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
+        pnlBody.add(scroll, BorderLayout.CENTER);
+        
+        pnlDetalle.add(pnlBody, BorderLayout.CENTER);
+
+        pnlIzquierda.add(pnlDetalle, BorderLayout.CENTER);
+
+        cuerpo.add(pnlIzquierda, BorderLayout.CENTER);
+
+        // ── Derecha (Resumen) ──
+        JPanel pnlResumen = UIKit.card();
+        pnlResumen.setPreferredSize(new Dimension(300, 0));
+        pnlResumen.setLayout(new GridBagLayout());
+        
+        GridBagConstraints gbcR = new GridBagConstraints();
+        gbcR.fill = GridBagConstraints.HORIZONTAL;
+        gbcR.weightx = 1.0;
+        
+        gbcR.gridx = 0; gbcR.gridy = 0;
+        gbcR.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
+        pnlResumen.add(UIKit.sectionHeader("Resumen", null), gbcR);
+        
+        gbcR.gridy = 1;
+        gbcR.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
+        pnlResumen.add(UIKit.fieldLabel("Subtotal"), gbcR);
+        gbcR.gridy = 2;
+        gbcR.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
+        pnlResumen.add(lblSubtotal, gbcR);
+        
+        gbcR.gridy = 3;
+        gbcR.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
+        pnlResumen.add(UIKit.fieldLabel("IGV (18%)"), gbcR);
+        gbcR.gridy = 4;
+        gbcR.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
+        pnlResumen.add(lblIgv, gbcR);
+        
+        gbcR.gridy = 5;
+        gbcR.insets = new Insets(UIKit.SPACE_MD, 0, UIKit.SPACE_XS, 0);
+        JLabel lblTotalTitle = new JLabel("TOTAL A PAGAR");
+        lblTotalTitle.setFont(UIKit.BODY_BOLD);
+        lblTotalTitle.setForeground(UIKit.TEXT_SECONDARY);
+        pnlResumen.add(lblTotalTitle, gbcR);
+        
+        gbcR.gridy = 6;
+        gbcR.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
+        pnlResumen.add(lblTotal, gbcR);
+        
+        gbcR.gridy = 7;
+        gbcR.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
+        pnlResumen.add(btnRegistrarCompra, gbcR);
+        
+        gbcR.gridy = 8;
+        gbcR.weighty = 1.0;
+        gbcR.anchor = GridBagConstraints.NORTH;
+        gbcR.insets = new Insets(0, 0, 0, 0);
+        pnlResumen.add(btnLimpiar, gbcR);
+
+        cuerpo.add(pnlResumen, BorderLayout.EAST);
+
+        getContentPane().add(cuerpo, BorderLayout.CENTER);
+    }
+
+    private void attachEvents() {
+        btnAgregarProducto.addActionListener(e -> {
+            // TODO: lógica TXT
+        });
+
+        btnQuitarProducto.addActionListener(e -> {
+            int row = tblDetalle.getSelectedRow();
+            if (row != -1) {
+                modelDetalle.removeRow(row);
+                recalcularTotales();
+            }
+        });
+
+        btnRegistrarCompra.addActionListener(e -> {
+            // TODO: lógica TXT
+        });
+
+        btnLimpiar.addActionListener(e -> {
+            cbProveedor.setSelectedIndex(0);
+            txtDocumento.setText("");
+            txtFecha.setText("");
+            txtCodProducto.setText("");
+            txtProductoNombre.setText("");
+            txtCantidad.setText("1");
+            txtPrecioUnitario.setText("");
+            txtLote.setText("");
+            txtVencimiento.setText("");
+            modelDetalle.setRowCount(0);
+            recalcularTotales();
+        });
+    }
+
+    private void recalcularTotales() {
+        double subtotal = 0;
+        for (int i = 0; i < modelDetalle.getRowCount(); i++) {
+            subtotal += Double.parseDouble(modelDetalle.getValueAt(i, 4).toString().replace("S/ ", ""));
+        }
+        double igv = subtotal * 0.18;
+        double total = subtotal + igv;
+        lblSubtotal.setText(String.format("S/ %.2f", subtotal));
+        lblIgv.setText(String.format("S/ %.2f", igv));
+        lblTotal.setText(String.format("S/ %.2f", total));
+    }
+}

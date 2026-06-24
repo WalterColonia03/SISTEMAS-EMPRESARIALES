@@ -1,0 +1,10 @@
+# Archivos compilados
+*.class
+build/
+build_out/
+dist/
+nbproject/private/
+
+# Archivos de SO
+.DS_Store
+Thumbs.db

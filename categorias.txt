@@ -1,0 +1,32 @@
+4,Lacteos,1
+5,Abarrotes,1
+6,Limpieza,1
+7,Congelados,1
+8,Cuidado Personal,1
+9,Panaderia,1
+10,Frutas y Verduras,1
+11,Carnes,1
+12,Embutidos,1
+13,Productos Enlatados,1
+14,Bebidas Alcoholicas,1
+15,Utiles del Hogar,1
+16,Productos para Mascotas,1
+17,Cereales,1
+18,Yogurt,1
+19,Helados,1
+20,Pastas,1
+21,Salsas y Condimentos,1
+22,Cafe y Te,1
+23,Articulos Escolares,1
+24,Huevos,1
+25,Quesos,1
+26,Detergentes,1
+27,Papel Higienico,1
+28,Jabones,1
+29,Agua Mineral,1
+30,Harinas,1
+31,Conservas,1
+32,Dulces,1
+33,Productos Naturales,1
+34,Bebidas Energeticas,1
+35,Menestras,1

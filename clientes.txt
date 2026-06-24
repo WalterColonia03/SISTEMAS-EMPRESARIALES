@@ -1,0 +1,12 @@
+1,Pablo,Tapia,74859621,987654321,Laredo,1
+2,Marcos,Ramirez,74125896,912345678,Trujillo,1
+3,Ana,Torres,78965412,945612378,El Porvenir,1
+4,Lucia,Flores,75632148,978451236,Florencia de Mora,1
+5,Carlos,Sanchez,71236985,956874123,Víctor Larco,1
+6,Andrea,Lopez,79852314,987123654,Laredo,1
+7,Jose,Cruz,74589632,965478123,Huanchaco,1
+8,Maria,Gomez,73698521,932145678,Moche,1
+9,Kevin,Castillo,71478523,944785236,Salaverry,1
+10,Rosa,Diaz,72589631,955214789,Trujillo,1
+11,Daniel,Vargas,70124589,966325874,Laredo,1
+12,Sofia,Ruiz,73214589,988745632,El Porvenir,1
