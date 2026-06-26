@@ -1,4 +1,7 @@
 package Vista;
+import com.toedter.calendar.JDateChooser;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import Clases.Compra;
 import Clases.DetalleCompra;
@@ -18,13 +21,13 @@ import java.util.Date;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-// CORRECCIÓN: import java.awt.* duplicado eliminado (2026-06-26 — Auditoría ERP)
+// CORRECCIÃƒÆ’Ã¢â‚¬Å“N: import java.awt.* duplicado eliminado (2026-06-26 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â AuditorÃƒÆ’Ã‚Â­a ERP)
 
 public class IFrmRegistroCompras extends JInternalFrame {
 
     private JComboBox<String> cbProveedor;
     private JTextField txtDocumento;
-    private JTextField txtFecha;
+    private JDateChooser txtFecha;
 
     private JTextField txtCodProducto;
     private JTextField txtProductoNombre;
@@ -65,7 +68,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
         cbProveedor.setFont(UIKit.BODY);
         
         txtDocumento = UIKit.textField();
-        txtFecha = UIKit.textField();
+        txtFecha = new JDateChooser(); txtFecha.setDateFormatString("dd/MM/yyyy"); txtFecha.setDate(new java.util.Date());
 
         txtCodProducto = UIKit.textField();
         
@@ -82,7 +85,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
         txtVencimiento = UIKit.textField();
         txtVencimiento.putClientProperty("JTextField.placeholderText", "AAAA-MM-DD");
 
-        String[] columns = {"Código", "Producto", "Cant", "P. Unit", "Subtotal", "Lote", "Vencimiento"};
+        String[] columns = {"CÃƒÆ’Ã‚Â³digo", "Producto", "Cant", "P. Unit", "Subtotal", "Lote", "Vencimiento"};
         modelDetalle = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
@@ -115,13 +118,13 @@ public class IFrmRegistroCompras extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Registro de Compras", "Compras  ›  Ingreso de Mercadería"),
+                UIKit.screenHeader("Registro de Compras", "Compras  ÃƒÂ¢Ã¢â€šÂ¬Ã‚Âº  Ingreso de MercaderÃƒÆ’Ã‚Â­a"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
         cuerpo.setOpaque(false);
 
-        // ── Izquierda (Datos y Detalle) ──
+        // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Izquierda (Datos y Detalle) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
         JPanel pnlIzquierda = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
         pnlIzquierda.setOpaque(false);
 
@@ -166,7 +169,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
         // Agregar Productos
         JPanel pnlDetalle = UIKit.card();
         pnlDetalle.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlDetalle.add(UIKit.sectionHeader("Detalle de Mercadería", btnQuitarProducto), BorderLayout.NORTH);
+        pnlDetalle.add(UIKit.sectionHeader("Detalle de MercaderÃƒÆ’Ã‚Â­a", btnQuitarProducto), BorderLayout.NORTH);
         
         JPanel pnlFormProd = new JPanel(new GridBagLayout());
         pnlFormProd.setOpaque(false);
@@ -176,7 +179,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
         
         // Fila 1
         gbcP.gridy = 0;
-        gbcP.gridx = 0; gbcP.weightx = 0.2; pnlFormProd.add(UIKit.fieldLabel("Código"), gbcP);
+        gbcP.gridx = 0; gbcP.weightx = 0.2; pnlFormProd.add(UIKit.fieldLabel("CÃƒÆ’Ã‚Â³digo"), gbcP);
         gbcP.gridx = 1; gbcP.weightx = 0.4; pnlFormProd.add(UIKit.fieldLabel("Producto"), gbcP);
         gbcP.gridx = 2; gbcP.weightx = 0.1; pnlFormProd.add(UIKit.fieldLabel("Cant"), gbcP);
         gbcP.gridx = 3; gbcP.weightx = 0.1; gbcP.insets = new Insets(0, 0, UIKit.SPACE_SM, 0); pnlFormProd.add(UIKit.fieldLabel("P. Unit"), gbcP);
@@ -218,7 +221,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
 
         cuerpo.add(pnlIzquierda, BorderLayout.CENTER);
 
-        // ── Derecha (Resumen) ──
+        // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Derecha (Resumen) ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
         JPanel pnlResumen = UIKit.card();
         pnlResumen.setPreferredSize(new Dimension(300, 0));
         pnlResumen.setLayout(new GridBagLayout());
@@ -294,7 +297,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
                     JOptionPane.showMessageDialog(this, "Producto no encontrado");
                 }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Código inválido");
+                JOptionPane.showMessageDialog(this, "CÃƒÆ’Ã‚Â³digo invÃƒÆ’Ã‚Â¡lido");
             }
         });
 
@@ -305,7 +308,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
             }
             try {
                 int cant = Integer.parseInt(txtCantidad.getText().trim());
-                // CORRECCIÓN: BigDecimal para evitar errores de coma flotante en precios de compra
+                // CORRECCIÃƒÆ’Ã¢â‚¬Å“N: BigDecimal para evitar errores de coma flotante en precios de compra
                 BigDecimal precio    = new BigDecimal(txtPrecioUnitario.getText().trim().replace(",", "."));
                 BigDecimal subtotal  = precio.multiply(new BigDecimal(cant)).setScale(2, RoundingMode.HALF_UP);
                 
@@ -329,7 +332,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
                 
                 recalcularTotales();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Ingrese valores numéricos válidos en Cantidad y Precio");
+                JOptionPane.showMessageDialog(this, "Ingrese valores numÃƒÆ’Ã‚Â©ricos vÃƒÆ’Ã‚Â¡lidos en Cantidad y Precio");
             }
         });
 
@@ -356,13 +359,13 @@ public class IFrmRegistroCompras extends JInternalFrame {
                 String provStr = cbProveedor.getSelectedItem().toString();
                 compra.setIdProveedor(Integer.parseInt(provStr.split(" - ")[0]));
                 
-                String fecha = txtFecha.getText().trim();
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy"); String fecha = txtFecha.getDate() != null ? sdf.format(txtFecha.getDate()) : "";
                 if (fecha.isEmpty()) {
                     fecha = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
                 }
                 compra.setFecha(fecha);
                 
-                // CORRECCIÓN: total como BigDecimal
+                // CORRECCIÃƒÆ’Ã¢â‚¬Å“N: total como BigDecimal
                 BigDecimal total = new BigDecimal(lblTotal.getText().replace("S/ ", "").replace(",", "."));
                 compra.setTotal(total);
                 
@@ -371,21 +374,21 @@ public class IFrmRegistroCompras extends JInternalFrame {
                     d.setIdProducto(Integer.parseInt(modelDetalle.getValueAt(i, 0).toString()));
                     d.setCantidad(Integer.parseInt(modelDetalle.getValueAt(i, 2).toString()));
                     String precioStr = modelDetalle.getValueAt(i, 3).toString().replace("S/ ", "").replace(",", ".");
-                    // CORRECCIÓN: precio unitario como BigDecimal
+                    // CORRECCIÃƒÆ’Ã¢â‚¬Å“N: precio unitario como BigDecimal
                     d.setPrecioUnitario(new BigDecimal(precioStr));
                     compra.getDetalles().add(d);
                 }
                 
                 CompraDAO dao = new CompraDAO();
                 if (dao.registrarCompra(compra)) {
-                    JOptionPane.showMessageDialog(this, "Compra registrada y stock actualizado con éxito.");
+                    JOptionPane.showMessageDialog(this, "Compra registrada y stock actualizado con ÃƒÆ’Ã‚Â©xito.");
                     btnLimpiar.doClick();
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al registrar la compra en la base de datos.");
                 }
                 
             } catch (Exception ex) {
-                Utils.LoggerGlobal.error("IFrmRegistroCompras.registrar() falló", ex); // CORRECCIÓN
+                Utils.LoggerGlobal.error("IFrmRegistroCompras.registrar() fallÃƒÆ’Ã‚Â³", ex); // CORRECCIÃƒÆ’Ã¢â‚¬Å“N
                 JOptionPane.showMessageDialog(this, "Error al procesar los datos de la compra: " + ex.getMessage());
             }
         });
@@ -393,7 +396,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
         btnLimpiar.addActionListener(e -> {
             cbProveedor.setSelectedIndex(0);
             txtDocumento.setText("");
-            txtFecha.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+            txtFecha.setDate(new Date());
             txtCodProducto.setText("");
             txtProductoNombre.setText("");
             txtCantidad.setText("1");
@@ -404,12 +407,12 @@ public class IFrmRegistroCompras extends JInternalFrame {
             recalcularTotales();
         });
         
-        txtFecha.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+        txtFecha.setDate(new Date());
     }
 
     /**
-     * Recalcula subtotal, IGV (18%) y total usando BigDecimal para precisión exacta.
-     * CORRECCIÓN: Migrado de double a BigDecimal (2026-06-26 — Auditoría ERP)
+     * Recalcula subtotal, IGV (18%) y total usando BigDecimal para precisiÃƒÆ’Ã‚Â³n exacta.
+     * CORRECCIÃƒÆ’Ã¢â‚¬Å“N: Migrado de double a BigDecimal (2026-06-26 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â AuditorÃƒÆ’Ã‚Â­a ERP)
      */
     private void recalcularTotales() {
         BigDecimal subtotal = BigDecimal.ZERO;

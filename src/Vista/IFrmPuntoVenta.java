@@ -12,220 +12,443 @@ import Vista.Estilos.UIKit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-/**
- * IFrmPuntoVenta - Módulo de Facturación / POS.
- * Rediseñado con UIKit (Patrón H).
- */
 public class IFrmPuntoVenta extends JInternalFrame {
 
-    private JTextField txtDni;
-    private JLabel lblNombreCliente;
     private JTextField txtCodProducto;
-    private JTextField txtCantidad;
     private JTable tblCarrito;
     private DefaultTableModel modelCarrito;
 
-    private JComboBox<String> cbMetodoPago;
-    private JLabel lblTotal;
-    private JButton btnAgregar;
+    private JTextField txtBuscarProd;
+    private JPanel pnlGridProductos;
+
+    private JTextField txtDni;
+    private JLabel lblNombreCliente;
+    private JLabel lblPuntos;
     private JButton btnBuscarCliente;
+    private JButton btnCanjearPuntos;
+
+    private JComboBox<String> cbComprobante;
+    private JComboBox<String> cbMetodoPago;
+    private JTextField txtMontoRecibido;
+    private JLabel lblSubtotal;
+    private JLabel lblTotal;
+    private JLabel lblVuelto;
+
     private JButton btnRegistrar;
     private JButton btnCancelar;
-    
-    private JLabel lblPuntos;
-    private JButton btnCanjearPuntos;
+
     private double descuentoPuntos = 0.0;
     private int puntosActualesCliente = 0;
     private int puntosACanjear = 0;
 
     public IFrmPuntoVenta() {
-        super("Punto de Venta (POS)", true, true, true, true);
+        super("Punto de Venta", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
-        setSize(1000, 650);
+        cargarProductos(null);
+        setSize(1150, 750);
         putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
     }
 
     private void initComponents() {
-        txtDni = UIKit.textField();
-        txtDni.setPreferredSize(new Dimension(150, 36));
+        txtCodProducto = UIKit.textField();
+        txtCodProducto.setPreferredSize(new Dimension(0, 44));
+        txtCodProducto.putClientProperty("JTextField.placeholderText", "Ingresa el cÃ³digo de barras y presiona Enter...");
 
+        String[] columns = { "ID", "Producto", "P. Unit.", "Cant.", "Subtotal" };
+        modelCarrito = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int col) { return col == 3; } // Solo cantidad editable
+        };
+        tblCarrito = UIKit.styledTable(modelCarrito);
+
+        txtBuscarProd = UIKit.textField();
+        txtBuscarProd.setPreferredSize(new Dimension(300, 36));
+        txtBuscarProd.putClientProperty("JTextField.placeholderText", "Buscar producto por nombre...");
+
+        pnlGridProductos = new JPanel(new GridLayout(0, 3, 10, 10)); // 3 columnas
+        pnlGridProductos.setBackground(UIKit.BG_APP);
+
+        txtDni = UIKit.textField();
+        btnBuscarCliente = UIKit.secondaryButton("ðŸ”");
         lblNombreCliente = new JLabel("Consumidor Final");
         lblNombreCliente.setFont(UIKit.BODY_BOLD);
         lblNombreCliente.setForeground(UIKit.PRIMARY);
 
-        txtCodProducto = UIKit.textField();
-        txtCodProducto.setPreferredSize(new Dimension(180, 36));
-        txtCodProducto.putClientProperty("JTextField.placeholderText", "Código de barras...");
-        
         lblPuntos = new JLabel("Pts: 0");
-        lblPuntos.setFont(UIKit.BODY);
         lblPuntos.setForeground(UIKit.WARNING);
-        
-        btnCanjearPuntos = UIKit.secondaryButton("Canjear Pts");
+        btnCanjearPuntos = UIKit.secondaryButton("Canjear");
         btnCanjearPuntos.setEnabled(false);
 
-        txtCantidad = UIKit.textField();
-        txtCantidad.setText("1");
-        txtCantidad.setHorizontalAlignment(JTextField.CENTER);
-        txtCantidad.setPreferredSize(new Dimension(80, 36));
+        cbComprobante = new JComboBox<>(new String[]{"Boleta Simple", "Factura"});
+        cbComprobante.setPreferredSize(new Dimension(0, 36));
 
-        // Tabla del carrito
-        String[] columns = { "Código", "Descripción", "P. Unitario", "Cant.", "Subtotal" };
-        modelCarrito = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) {
-                return false;
-            }
-        };
-        tblCarrito = UIKit.styledTable(modelCarrito);
-
-        cbMetodoPago = new JComboBox<>(
-                new String[] { "Efectivo", "Mercado Pago (QR)", "Tarjeta de Débito", "Tarjeta de Crédito" });
-        cbMetodoPago.setFont(UIKit.BODY);
+        cbMetodoPago = new JComboBox<>(new String[]{"Efectivo", "Mercado Pago (QR)", "Tarjeta DÃ©bito", "Tarjeta CrÃ©dito", "Yape", "Plin"});
         cbMetodoPago.setPreferredSize(new Dimension(0, 36));
 
-        lblTotal = new JLabel("S/ 0.00");
-        lblTotal.setFont(UIKit.H1);
+        txtMontoRecibido = UIKit.textField();
+        txtMontoRecibido.setPreferredSize(new Dimension(0, 36));
+        txtMontoRecibido.putClientProperty("JTextField.placeholderText", "Monto recibido (S/)");
+
+        lblSubtotal = new JLabel("S/ 0.00", SwingConstants.RIGHT);
+        lblSubtotal.setFont(UIKit.BODY);
+        
+        lblTotal = new JLabel("S/ 0.00", SwingConstants.RIGHT);
+        lblTotal.setFont(UIKit.H2);
         lblTotal.setForeground(UIKit.ACCENT);
 
-        btnAgregar = UIKit.secondaryButton("Agregar al Carrito");
-        btnBuscarCliente = UIKit.secondaryButton("Buscar");
+        lblVuelto = new JLabel("S/ 0.00", SwingConstants.RIGHT);
+        lblVuelto.setFont(UIKit.BODY_BOLD);
+        lblVuelto.setForeground(UIKit.SUCCESS);
 
-        btnRegistrar = UIKit.primaryButton("Cobrar y Emitir Ticket");
+        btnRegistrar = UIKit.primaryButton("Realizar Venta");
         btnRegistrar.setPreferredSize(new Dimension(0, 44));
 
-        btnCancelar = UIKit.dangerOutlineButton("Cancelar Venta");
+        btnCancelar = UIKit.dangerOutlineButton("Vaciar carrito");
     }
 
     private void buildLayout() {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().setBackground(UIKit.BG_APP);
-        ((JComponent) getContentPane()).setBorder(new EmptyBorder(
-                UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
+        ((JComponent) getContentPane()).setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        // ===== Encabezado =====
-        getContentPane().add(
-                UIKit.screenHeader("Punto de Venta (POS)", "Ventas  ›  Punto de Venta"),
-                BorderLayout.NORTH);
+        // ==== LADO IZQUIERDO (Carrito + CatÃ¡logo) ====
+        JPanel pnlCentro = new JPanel(new BorderLayout(0, 15));
+        pnlCentro.setOpaque(false);
 
-        JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
-        cuerpo.setOpaque(false);
+        // Arriba: Carrito y cÃ³digo de barras
+        JPanel pnlCart = UIKit.card();
+        pnlCart.setLayout(new BorderLayout(0, 10));
+        pnlCart.add(txtCodProducto, BorderLayout.NORTH);
+        
+        JScrollPane scrollCart = new JScrollPane(tblCarrito);
+        scrollCart.setPreferredSize(new Dimension(0, 200));
+        pnlCart.add(scrollCart, BorderLayout.CENTER);
+        
+        JLabel lblHelp = new JLabel("Doble clic en un producto del carrito para quitarlo");
+        lblHelp.setFont(UIKit.CAPTION);
+        lblHelp.setForeground(UIKit.TEXT_SECONDARY);
+        pnlCart.add(lblHelp, BorderLayout.SOUTH);
 
-        // ── Lado Izquierdo (Cliente y Carrito) ──
-        JPanel pnlIzquierda = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
-        pnlIzquierda.setOpaque(false);
+        // Abajo: CatÃ¡logo
+        JPanel pnlCatalogo = new JPanel(new BorderLayout(0, 10));
+        pnlCatalogo.setOpaque(false);
 
-        // Cliente
-        JPanel pnlCliente = UIKit.card();
-        pnlCliente.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlCliente.add(UIKit.sectionHeader("Información del Cliente", null), BorderLayout.NORTH);
+        JPanel pnlSearch = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        pnlSearch.setOpaque(false);
+        pnlSearch.add(txtBuscarProd);
 
-        JPanel pnlBusquedaC = new JPanel(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_SM, 0));
-        pnlBusquedaC.setOpaque(false);
-        pnlBusquedaC.add(UIKit.fieldLabel("DNI / RUC:"));
-        pnlBusquedaC.add(txtDni);
-        pnlBusquedaC.add(btnBuscarCliente);
+        pnlCatalogo.add(pnlSearch, BorderLayout.NORTH);
 
-        JPanel pnlNombreC = new JPanel(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_SM, 0));
-        pnlNombreC.setOpaque(false);
-        pnlNombreC.add(UIKit.fieldLabel("Cliente Activo:"));
-        pnlNombreC.add(lblNombreCliente);
-        pnlNombreC.add(lblPuntos);        // BUG FIX: eliminada la adición duplicada de estos componentes
-        pnlNombreC.add(btnCanjearPuntos); // (2026-06-26 — Auditoría de código)
+        JScrollPane scrollGrid = new JScrollPane(pnlGridProductos);
+        scrollGrid.setBorder(null);
+        scrollGrid.getVerticalScrollBar().setUnitIncrement(16);
+        pnlCatalogo.add(scrollGrid, BorderLayout.CENTER);
 
-        JPanel pnlClienteBody = new JPanel(new GridLayout(2, 1, 0, UIKit.SPACE_XS));
-        pnlClienteBody.setOpaque(false);
-        pnlClienteBody.add(pnlBusquedaC);
-        pnlClienteBody.add(pnlNombreC);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, pnlCart, pnlCatalogo);
+        splitPane.setDividerLocation(250);
+        splitPane.setDividerSize(10);
+        splitPane.setBorder(null);
+        splitPane.setOpaque(false);
+        pnlCentro.add(splitPane, BorderLayout.CENTER);
 
-        pnlCliente.add(pnlClienteBody, BorderLayout.CENTER);
+        getContentPane().add(pnlCentro, BorderLayout.CENTER);
 
-        pnlIzquierda.add(pnlCliente, BorderLayout.NORTH);
-
-        // Carrito
-        JPanel pnlCarrito = UIKit.card();
-        pnlCarrito.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlCarrito.add(UIKit.sectionHeader("Detalle de Venta", null), BorderLayout.NORTH);
-
-        JPanel pnlAgregarProd = new JPanel(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_SM, 0));
-        pnlAgregarProd.setOpaque(false);
-        pnlAgregarProd.add(UIKit.fieldLabel("Producto:"));
-        pnlAgregarProd.add(txtCodProducto);
-        pnlAgregarProd.add(UIKit.fieldLabel("Cant:"));
-        pnlAgregarProd.add(txtCantidad);
-        pnlAgregarProd.add(btnAgregar);
-
-        JPanel pnlCarritoBody = new JPanel(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlCarritoBody.setOpaque(false);
-        pnlCarritoBody.add(pnlAgregarProd, BorderLayout.NORTH);
-
-        JScrollPane scroll = new JScrollPane(tblCarrito);
-        scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
-        pnlCarritoBody.add(scroll, BorderLayout.CENTER);
-
-        pnlCarrito.add(pnlCarritoBody, BorderLayout.CENTER);
-
-        pnlIzquierda.add(pnlCarrito, BorderLayout.CENTER);
-
-        cuerpo.add(pnlIzquierda, BorderLayout.CENTER);
-
-        // ── Lado Derecho (Resumen y Pago) ──
+        // ==== LADO DERECHO (Resumen de Venta) ====
         JPanel pnlDerecha = UIKit.card();
-        pnlDerecha.setPreferredSize(new Dimension(320, 0));
+        pnlDerecha.setPreferredSize(new Dimension(340, 0));
         pnlDerecha.setLayout(new GridBagLayout());
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 1.0;
-
         gbc.gridx = 0;
         gbc.gridy = 0;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlDerecha.add(UIKit.sectionHeader("Resumen de Pago", null), gbc);
 
-        gbc.gridy = 1;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlDerecha.add(UIKit.fieldLabel("Método de Pago"), gbc);
+        // Cliente
+        gbc.insets = new Insets(0, 0, 5, 0);
+        pnlDerecha.add(UIKit.sectionHeader("Cliente", null), gbc);
+        gbc.gridy++;
+        
+        JPanel pnlDni = new JPanel(new BorderLayout(5, 0));
+        pnlDni.setOpaque(false);
+        pnlDni.add(txtDni, BorderLayout.CENTER);
+        pnlDni.add(btnBuscarCliente, BorderLayout.EAST);
+        pnlDerecha.add(pnlDni, gbc);
+        gbc.gridy++;
+        
+        gbc.insets = new Insets(5, 0, 5, 0);
+        pnlDerecha.add(lblNombreCliente, gbc);
+        gbc.gridy++;
+        
+        JPanel pnlPts = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        pnlPts.setOpaque(false);
+        pnlPts.add(lblPuntos);
+        pnlPts.add(btnCanjearPuntos);
+        pnlDerecha.add(pnlPts, gbc);
+        gbc.gridy++;
 
-        gbc.gridy = 2;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
+        gbc.insets = new Insets(15, 0, 10, 0);
+        pnlDerecha.add(new JSeparator(), gbc);
+        gbc.gridy++;
+
+        // Resumen
+        gbc.insets = new Insets(0, 0, 15, 0);
+        pnlDerecha.add(UIKit.sectionHeader("Resumen de Venta", null), gbc);
+        gbc.gridy++;
+
+        JPanel pnlTotales = new JPanel(new GridLayout(2, 2, 5, 5));
+        pnlTotales.setOpaque(false);
+        pnlTotales.add(new JLabel("Subtotal"));
+        pnlTotales.add(lblSubtotal);
+        
+        JLabel lblT = new JLabel("Total");
+        lblT.setFont(UIKit.BODY_BOLD);
+        pnlTotales.add(lblT);
+        pnlTotales.add(lblTotal);
+        pnlDerecha.add(pnlTotales, gbc);
+        gbc.gridy++;
+
+        gbc.insets = new Insets(15, 0, 5, 0);
+        pnlDerecha.add(UIKit.fieldLabel("Tipo de comprobante"), gbc);
+        gbc.gridy++;
+        gbc.insets = new Insets(0, 0, 10, 0);
+        pnlDerecha.add(cbComprobante, gbc);
+        gbc.gridy++;
+
+        gbc.insets = new Insets(0, 0, 10, 0);
         pnlDerecha.add(cbMetodoPago, gbc);
+        gbc.gridy++;
 
-        gbc.gridy = 3;
-        gbc.insets = new Insets(UIKit.SPACE_MD, 0, UIKit.SPACE_XS, 0);
-        JLabel lblTotalTitle = new JLabel("TOTAL A PAGAR");
-        lblTotalTitle.setFont(UIKit.BODY_BOLD);
-        lblTotalTitle.setForeground(UIKit.TEXT_SECONDARY);
-        pnlDerecha.add(lblTotalTitle, gbc);
+        gbc.insets = new Insets(0, 0, 10, 0);
+        pnlDerecha.add(txtMontoRecibido, gbc);
+        gbc.gridy++;
 
-        gbc.gridy = 4;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
-        pnlDerecha.add(lblTotal, gbc);
+        JPanel pnlVuelto = new JPanel(new BorderLayout());
+        pnlVuelto.setOpaque(false);
+        pnlVuelto.add(new JLabel("Vuelto"), BorderLayout.WEST);
+        pnlVuelto.add(lblVuelto, BorderLayout.EAST);
+        pnlDerecha.add(pnlVuelto, gbc);
+        gbc.gridy++;
 
-        gbc.gridy = 5;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
+        gbc.insets = new Insets(20, 0, 10, 0);
         pnlDerecha.add(btnRegistrar, gbc);
+        gbc.gridy++;
 
-        gbc.gridy = 6;
         gbc.weighty = 1.0;
         gbc.anchor = GridBagConstraints.NORTH;
-        gbc.insets = new Insets(0, 0, 0, 0);
         pnlDerecha.add(btnCancelar, gbc);
 
-        cuerpo.add(pnlDerecha, BorderLayout.EAST);
+        getContentPane().add(pnlDerecha, BorderLayout.EAST);
+    }
 
-        getContentPane().add(cuerpo, BorderLayout.CENTER);
+    private int getCantidadEnCarrito(int idProducto) {
+        if (modelCarrito == null) return 0;
+        for (int i = 0; i < modelCarrito.getRowCount(); i++) {
+            if (Integer.parseInt(modelCarrito.getValueAt(i, 0).toString()) == idProducto) {
+                try {
+                    return Integer.parseInt(modelCarrito.getValueAt(i, 3).toString());
+                } catch (Exception ex) { return 0; }
+            }
+        }
+        return 0;
+    }
+
+    private void cargarProductos(String filtro) {
+        pnlGridProductos.removeAll();
+        ProductoDAO pdao = new ProductoDAO();
+        List<Producto> lista = (filtro == null || filtro.isEmpty()) ? pdao.listarTodos() : pdao.buscarPorTermino(filtro);
+        
+        for (Producto p : lista) {
+            JPanel card = new JPanel(new BorderLayout(5, 5));
+            card.setBackground(Color.WHITE);
+            card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(230, 230, 230), 1, true),
+                new EmptyBorder(10, 10, 10, 10)
+            ));
+            card.setPreferredSize(new Dimension(180, 80));
+
+            JLabel lblNom = new JLabel("<html><b>" + p.getNombre() + "</b></html>");
+            lblNom.setFont(UIKit.BODY);
+            card.add(lblNom, BorderLayout.NORTH);
+
+            JLabel lblPrecio = new JLabel("S/ " + p.getPrecio().toPlainString());
+            lblPrecio.setForeground(UIKit.PRIMARY);
+            card.add(lblPrecio, BorderLayout.WEST);
+
+            int stockVisual = p.getCantidad() - getCantidadEnCarrito(p.getIdProducto());
+
+            JLabel lblStock = new JLabel(stockVisual + " ud.");
+            lblStock.setFont(UIKit.CAPTION);
+            if(stockVisual <= 0) {
+                lblStock.setText("Sin stock");
+                lblStock.setForeground(UIKit.DANGER);
+            } else {
+                lblStock.setForeground(UIKit.TEXT_SECONDARY);
+            }
+            card.add(lblStock, BorderLayout.EAST);
+
+            if(stockVisual > 0) {
+                card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                card.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        agregarProductoAlCarrito(p);
+                    }
+                    @Override
+                    public void mouseEntered(MouseEvent e) { card.setBackground(new Color(245, 245, 255)); }
+                    @Override
+                    public void mouseExited(MouseEvent e) { card.setBackground(Color.WHITE); }
+                });
+            } else {
+                card.setBackground(new Color(250, 250, 250));
+            }
+
+            pnlGridProductos.add(card);
+        }
+        
+        // Rellenar espacios vacÃ­os si hay pocos productos para no deformar el grid
+        int faltantes = 3 - (lista.size() % 3);
+        if(faltantes != 3) {
+            for(int i=0; i<faltantes; i++) {
+                JPanel empty = new JPanel();
+                empty.setOpaque(false);
+                pnlGridProductos.add(empty);
+            }
+        }
+
+        pnlGridProductos.revalidate();
+        pnlGridProductos.repaint();
+    }
+
+    private void agregarProductoAlCarrito(Producto prod) {
+        // Verificar si ya existe
+        for(int i=0; i<modelCarrito.getRowCount(); i++) {
+            if(Integer.parseInt(modelCarrito.getValueAt(i, 0).toString()) == prod.getIdProducto()) {
+                int cantActual = Integer.parseInt(modelCarrito.getValueAt(i, 3).toString());
+                modelCarrito.setValueAt(cantActual + 1, i, 3);
+                return;
+            }
+        }
+        
+        // Agregar nuevo
+        int enCarrito = getCantidadEnCarrito(prod.getIdProducto());
+        if(prod.getCantidad() - enCarrito < 1) {
+            JOptionPane.showMessageDialog(this, "Stock agotado");
+            return;
+        }
+        BigDecimal precio = prod.getPrecio();
+        modelCarrito.addRow(new Object[]{
+            prod.getIdProducto(),
+            prod.getNombre(),
+            precio.toPlainString(),
+            1,
+            precio.toPlainString()
+        });
+        recalcularTotal();
+        cargarProductos(txtBuscarProd.getText());
     }
 
     private void attachEvents() {
+        // Buscador catÃ¡logo
+        txtBuscarProd.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { cargarProductos(txtBuscarProd.getText()); }
+            public void removeUpdate(DocumentEvent e) { cargarProductos(txtBuscarProd.getText()); }
+            public void changedUpdate(DocumentEvent e) { cargarProductos(txtBuscarProd.getText()); }
+        });
+
+        // Evento de ediciÃ³n de cantidad en el carrito
+        modelCarrito.addTableModelListener(e -> {
+            if (e.getColumn() == 3 && e.getType() == javax.swing.event.TableModelEvent.UPDATE) {
+                int row = e.getFirstRow();
+                if (row < 0 || row >= modelCarrito.getRowCount()) return;
+                try {
+                    int idProd = Integer.parseInt(modelCarrito.getValueAt(row, 0).toString());
+                    int nuevaCant = Integer.parseInt(modelCarrito.getValueAt(row, 3).toString());
+                    
+                    if (nuevaCant <= 0) {
+                        JOptionPane.showMessageDialog(IFrmPuntoVenta.this, "La cantidad debe ser mayor a 0. Para eliminar, doble clic en la fila.");
+                        SwingUtilities.invokeLater(() -> modelCarrito.setValueAt(1, row, 3));
+                        return;
+                    }
+                    
+                    ProductoDAO dao = new ProductoDAO();
+                    Producto prodReal = null;
+                    for (Producto p : dao.listarTodos()) {
+                        if (p.getIdProducto() == idProd) { prodReal = p; break; }
+                    }
+                    
+                    if (prodReal != null && nuevaCant > prodReal.getCantidad()) {
+                        int maxDisponible = prodReal.getCantidad();
+                        JOptionPane.showMessageDialog(IFrmPuntoVenta.this, "Stock insuficiente. MÃ¡ximo disponible: " + maxDisponible);
+                        SwingUtilities.invokeLater(() -> modelCarrito.setValueAt(maxDisponible, row, 3));
+                        return;
+                    }
+                    
+                    BigDecimal precio = new BigDecimal(modelCarrito.getValueAt(row, 2).toString().replace(",", "."));
+                    BigDecimal sub = precio.multiply(new BigDecimal(nuevaCant));
+                    
+                    SwingUtilities.invokeLater(() -> {
+                        modelCarrito.setValueAt(sub.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(), row, 4);
+                        recalcularTotal();
+                        cargarProductos(txtBuscarProd.getText());
+                    });
+                } catch(NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(IFrmPuntoVenta.this, "Ingrese una cantidad numÃ©rica vÃ¡lida.");
+                    SwingUtilities.invokeLater(() -> modelCarrito.setValueAt(1, row, 3));
+                }
+            }
+        });
+
+        // Ingreso por cÃ³digo barras
+        txtCodProducto.addActionListener(e -> {
+            String cod = txtCodProducto.getText().trim();
+            if(cod.isEmpty()) return;
+            try {
+                int id = Integer.parseInt(cod);
+                ProductoDAO dao = new ProductoDAO();
+                Producto prod = null;
+                for(Producto p : dao.listarTodos()) {
+                    if(p.getIdProducto() == id) { prod = p; break; }
+                }
+                if(prod != null) {
+                    agregarProductoAlCarrito(prod);
+                    txtCodProducto.setText("");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Producto no encontrado");
+                }
+            } catch(Exception ex) {
+                JOptionPane.showMessageDialog(this, "CÃ³digo invÃ¡lido");
+            }
+        });
+
+        // Eliminar fila
+        tblCarrito.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = tblCarrito.getSelectedRow();
+                    if(row != -1) {
+                        modelCarrito.removeRow(row);
+                        recalcularTotal();
+                        cargarProductos(txtBuscarProd.getText());
+                    }
+                }
+            }
+        });
+
+        // Buscar cliente
         btnBuscarCliente.addActionListener(e -> {
             String dni = txtDni.getText().trim();
             descuentoPuntos = 0.0;
@@ -252,22 +475,23 @@ public class IFrmPuntoVenta extends JInternalFrame {
             }
             if (!encontrado) {
                 lblNombreCliente.setText("Buscando en API...");
-                lblPuntos.setText("Pts: 0");
-                btnCanjearPuntos.setEnabled(false);
-                puntosActualesCliente = 0;
-
                 SwingUtilities.invokeLater(() -> {
                     if (dni.length() == 8) {
                         String[] datos = ApisPeruService.consultarDNI(dni);
                         if (datos != null) {
                             lblNombreCliente.setText(datos[0] + " " + datos[1] + " " + datos[2]);
-                            Cliente nC = new Cliente(cdao.generarId(), datos[0],
-                                    datos[1] + " " + datos[2], dni, "", "", 1);
+                            Cliente nC = new Cliente(cdao.generarId(), datos[0], datos[1] + " " + datos[2], dni, "", "", 1);
                             cdao.guardar(nC);
                         } else {
-                            lblNombreCliente.setText("Consumidor Final");
-                            lblPuntos.setText("Pts: 0");
-                            JOptionPane.showMessageDialog(this, "DNI no encontrado en RENIEC");
+                            int resp = JOptionPane.showConfirmDialog(this, "DNI no encontrado en la base de datos pÃºblica.\nÂ¿Desea registrarlo manualmente?", "No encontrado", JOptionPane.YES_NO_OPTION);
+                            if (resp == JOptionPane.YES_OPTION) {
+                                String nombres = JOptionPane.showInputDialog(this, "Nombres y apellidos:");
+                                if (nombres != null && !nombres.trim().isEmpty()) {
+                                    lblNombreCliente.setText(nombres.trim());
+                                    Cliente nC = new Cliente(cdao.generarId(), nombres.trim(), "", dni, "", "", 1);
+                                    cdao.guardar(nC);
+                                } else { lblNombreCliente.setText("Consumidor Final"); }
+                            } else { lblNombreCliente.setText("Consumidor Final"); lblPuntos.setText("Pts: 0"); }
                         }
                     } else if (dni.length() == 11) {
                         String[] datos = ApisPeruService.consultarRUC(dni);
@@ -277,81 +501,96 @@ public class IFrmPuntoVenta extends JInternalFrame {
                             cdao.guardar(nC);
                         } else {
                             lblNombreCliente.setText("Consumidor Final");
-                            lblPuntos.setText("Pts: 0");
-                            JOptionPane.showMessageDialog(this, "RUC no encontrado en SUNAT");
+                            JOptionPane.showMessageDialog(this, "RUC no encontrado");
                         }
                     } else {
                         lblNombreCliente.setText("Consumidor Final");
-                        lblPuntos.setText("Pts: 0");
-                        JOptionPane.showMessageDialog(this, "Debe ser un DNI (8 dígitos) o RUC (11 dígitos)");
+                        JOptionPane.showMessageDialog(this, "DNI/RUC invÃ¡lido");
                     }
                 });
             }
         });
 
+        // Canjear puntos
         btnCanjearPuntos.addActionListener(e -> {
             if (puntosActualesCliente >= 100) {
-                // Cada 100 puntos = S/ 1.00 de descuento
                 int puntosUsables = (puntosActualesCliente / 100) * 100;
-                descuentoPuntos = puntosUsables / 100.0; // double solo para almacenaje del descuento UI
+                descuentoPuntos = puntosUsables / 100.0;
                 puntosACanjear = puntosUsables;
-                JOptionPane.showMessageDialog(this,
-                        "Se aplicará un descuento de S/ " + String.format("%.2f", descuentoPuntos) +
-                        "\n(Usando " + puntosUsables + " puntos)");
+                JOptionPane.showMessageDialog(this, "Descuento de S/ " + String.format("%.2f", descuentoPuntos) + " aplicado.");
                 recalcularTotal();
                 btnCanjearPuntos.setEnabled(false);
             }
         });
 
-        btnAgregar.addActionListener(e -> {
-            String cod = txtCodProducto.getText().trim();
-            if (cod.isEmpty()) return;
-            try {
-                int id = Integer.parseInt(cod);
-                ProductoDAO pdao = new ProductoDAO();
-                Producto prod = null;
-                for (Producto p : pdao.listarTodos()) {
-                    if (p.getIdProducto() == id) { prod = p; break; }
-                }
-                if (prod != null) {
-                    int cant = Integer.parseInt(txtCantidad.getText().trim());
-                    if (cant > prod.getCantidad()) {
-                        JOptionPane.showMessageDialog(this,
-                                "Stock insuficiente. Stock actual: " + prod.getCantidad());
-                        return;
-                    }
-                    // CORRECCIÓN: uso de BigDecimal para precio * cantidad (precisión financiera)
-                    java.math.BigDecimal precio   = prod.getPrecio();
-                    java.math.BigDecimal subtotal = precio.multiply(new java.math.BigDecimal(cant));
+        // Calcular vuelto y bloquear input si es pago digital
+        txtMontoRecibido.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { calcularVuelto(); }
+            public void removeUpdate(DocumentEvent e) { calcularVuelto(); }
+            public void changedUpdate(DocumentEvent e) { calcularVuelto(); }
+        });
 
-                    modelCarrito.addRow(new Object[]{
-                        prod.getIdProducto(),
-                        prod.getNombre(),
-                        precio.toPlainString(),
-                        cant,
-                        subtotal.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
-                    });
-                    txtCodProducto.setText("");
-                    txtCantidad.setText("1");
-                    recalcularTotal();
-                    txtCodProducto.requestFocus();
-                } else {
-                    JOptionPane.showMessageDialog(this, "Producto no encontrado");
-                }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Código o cantidad inválida");
+        cbMetodoPago.addActionListener(e -> {
+            String metodo = cbMetodoPago.getSelectedItem().toString();
+            if (!metodo.equals("Efectivo")) {
+                txtMontoRecibido.setText(lblTotal.getText().replace("S/ ", ""));
+                txtMontoRecibido.setEditable(false);
+                txtMontoRecibido.setBackground(new Color(240, 240, 240));
+            } else {
+                txtMontoRecibido.setEditable(true);
+                txtMontoRecibido.setBackground(Color.WHITE);
+                txtMontoRecibido.setText("");
             }
         });
 
+        // Registrar
         btnRegistrar.addActionListener(e -> {
             if (modelCarrito.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "El carrito está vacío");
+                JOptionPane.showMessageDialog(this, "El carrito estÃ¡ vacÃ­o");
                 return;
             }
             try {
-                // CORRECCIÓN: total leído y almacenado como BigDecimal
                 String totalStr = lblTotal.getText().replace("S/ ", "").replace(",", ".");
-                java.math.BigDecimal total = new java.math.BigDecimal(totalStr);
+                BigDecimal total = new BigDecimal(totalStr);
+
+                // ValidaciÃ³n de pago en Efectivo
+                if (cbMetodoPago.getSelectedItem().toString().equals("Efectivo")) {
+                    String montoStr = txtMontoRecibido.getText().trim().replace(",", ".");
+                    if (montoStr.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Debe ingresar el monto recibido del cliente.", "Monto vacÃ­o", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                    try {
+                        BigDecimal montoRecibido = new BigDecimal(montoStr);
+                        if (montoRecibido.compareTo(total) < 0) {
+                            BigDecimal faltante = total.subtract(montoRecibido).setScale(2, java.math.RoundingMode.HALF_UP);
+                            JOptionPane.showMessageDialog(this, 
+                                "âš  El monto ingresado (S/ " + montoRecibido.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + 
+                                ") es insuficiente para cubrir el total (S/ " + total.toPlainString() + ").\n\nFaltan S/ " + 
+                                faltante.toPlainString() + " para completar el pago.", 
+                                "Pago Insuficiente", 
+                                JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    } catch (NumberFormatException ex) {
+                        JOptionPane.showMessageDialog(this, "Monto recibido invÃ¡lido. Ingrese solo nÃºmeros.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                } else {
+                    // ValidaciÃ³n para pagos digitales (Yape, Tarjetas, etc)
+                    String montoStr = txtMontoRecibido.getText().trim().replace(",", ".");
+                    BigDecimal montoRecibido = new BigDecimal(montoStr);
+                    if (montoRecibido.compareTo(total) > 0) {
+                        JOptionPane.showMessageDialog(this, 
+                            "âš  Los pagos digitales (Yape, Plin, Tarjeta) deben ser por el monto EXACTO de la venta.\n\n" +
+                            "Si el cliente transfiriÃ³ S/ " + montoRecibido.toPlainString() + " por error (S/ " + 
+                            montoRecibido.subtract(total).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + " de mÃ¡s),\n" +
+                            "la devoluciÃ³n debe realizarse manualmente desde su aplicaciÃ³n bancaria\npara evitar descuadres en la contabilidad del sistema.", 
+                            "Sobrepago Digital Detectado", 
+                            JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                }
 
                 Venta v = new Venta();
                 v.setCliente(lblNombreCliente.getText());
@@ -361,85 +600,88 @@ public class IFrmPuntoVenta extends JInternalFrame {
                 for (int i = 0; i < modelCarrito.getRowCount(); i++) {
                     DetalleVenta d = new DetalleVenta();
                     d.setIdProducto(Integer.parseInt(modelCarrito.getValueAt(i, 0).toString()));
-                    // CORRECCIÓN: precio unitario como BigDecimal
-                    d.setPrecioUnitario(new java.math.BigDecimal(
-                            modelCarrito.getValueAt(i, 2).toString().replace(",", ".")));
+                    d.setPrecioUnitario(new BigDecimal(modelCarrito.getValueAt(i, 2).toString().replace(",", ".")));
                     d.setCantidad(Integer.parseInt(modelCarrito.getValueAt(i, 3).toString()));
                     v.getDetalles().add(d);
                 }
 
                 VentaDAO dao = new VentaDAO();
                 if (dao.registrarVentaCompleta(v)) {
-                    // FR-020-v2 CA-1: registrar venta exitosa en bitácora
-                    Utils.BitacoraService.registrar(
-                        Clases.Sesion.getUsuario(),
-                        Utils.BitacoraService.MOD_POS,
-                        "REGISTRO_VENTA",
-                        Utils.BitacoraService.OK,
-                        "Total: S/ " + total.toPlainString() + " | Cliente: " + v.getCliente()
-                    );
+                    Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_POS, "REGISTRO_VENTA", Utils.BitacoraService.OK, "Total: S/ " + total.toPlainString());
                     String dniStr = txtDni.getText().trim();
                     if (!dniStr.isEmpty()) {
                         ClienteDAO cdao = new ClienteDAO();
                         int puntosGanados = total.intValue();
-                        int deltaPuntos = puntosGanados - puntosACanjear;
-                        cdao.actualizarPuntosPorDni(dniStr, deltaPuntos);
-                        JOptionPane.showMessageDialog(this,
-                                "✅ Venta registrada con éxito.\nPuntos ganados: +" + puntosGanados);
-                    } else {
-                        JOptionPane.showMessageDialog(this, "✅ Venta registrada con éxito.");
+                        cdao.actualizarPuntosPorDni(dniStr, puntosGanados - puntosACanjear);
                     }
+                    JOptionPane.showMessageDialog(this, "âœ… Venta registrada con Ã©xito.\nVuelto: " + lblVuelto.getText());
                     btnCancelar.doClick();
+                    cargarProductos(txtBuscarProd.getText()); // recargar stock
                 } else {
-                    Utils.BitacoraService.registrar(
-                        Clases.Sesion.getUsuario(),
-                        Utils.BitacoraService.MOD_POS,
-                        "REGISTRO_VENTA",
-                        Utils.BitacoraService.FALLO,
-                        "Error al guardar en BD"
-                    );
-                    JOptionPane.showMessageDialog(this, "❌ Error al guardar en base de datos.");
+                    JOptionPane.showMessageDialog(this, "âŒ Error al guardar en base de datos.");
                 }
             } catch (Exception ex) {
-                Utils.LoggerGlobal.error("IFrmPuntoVenta.registrar() falló", ex);
                 JOptionPane.showMessageDialog(this, "Error procesando la venta: " + ex.getMessage());
             }
         });
 
+        // Cancelar
         btnCancelar.addActionListener(e -> {
             modelCarrito.setRowCount(0);
             txtDni.setText("");
             txtCodProducto.setText("");
-            txtCantidad.setText("1");
+            txtBuscarProd.setText("");
             lblNombreCliente.setText("Consumidor Final");
             lblPuntos.setText("Pts: 0");
             descuentoPuntos = 0.0;
             puntosACanjear = 0;
             puntosActualesCliente = 0;
             btnCanjearPuntos.setEnabled(false);
-            lblTotal.setText("S/ 0.00");
+            txtMontoRecibido.setText("");
+            recalcularTotal();
+            cargarProductos(txtBuscarProd.getText());
         });
     }
 
-    /**
-     * Recalcula el total del carrito usando BigDecimal para evitar errores de coma flotante.
-     * Aplica el descuento por canje de puntos si corresponde.
-     * Creado: 2026-06-25 | Refactorizado: 2026-06-26 (Auditoría ERP)
-     */
     private void recalcularTotal() {
-        // CORRECCIÓN: acumulación con BigDecimal, no con double
-        java.math.BigDecimal total = java.math.BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO;
         for (int i = 0; i < modelCarrito.getRowCount(); i++) {
             String subtotalStr = modelCarrito.getValueAt(i, 4).toString().replace(",", ".");
-            total = total.add(new java.math.BigDecimal(subtotalStr));
+            total = total.add(new BigDecimal(subtotalStr));
         }
-        // Descuento por canje de puntos
-        java.math.BigDecimal descuento = new java.math.BigDecimal(descuentoPuntos);
+        
+        lblSubtotal.setText("S/ " + total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+
+        BigDecimal descuento = new BigDecimal(descuentoPuntos);
         total = total.subtract(descuento);
-        if (total.compareTo(java.math.BigDecimal.ZERO) < 0) {
-            total = java.math.BigDecimal.ZERO;
-        }
+        if (total.compareTo(BigDecimal.ZERO) < 0) total = BigDecimal.ZERO;
+        
         lblTotal.setText("S/ " + total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        
+        if (cbMetodoPago != null && cbMetodoPago.getSelectedItem() != null && !cbMetodoPago.getSelectedItem().toString().equals("Efectivo")) {
+            txtMontoRecibido.setText(total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        }
+        
+        calcularVuelto();
+    }
+
+    private void calcularVuelto() {
+        try {
+            String montoStr = txtMontoRecibido.getText().trim();
+            if(montoStr.isEmpty()) {
+                lblVuelto.setText("S/ 0.00");
+                return;
+            }
+            BigDecimal monto = new BigDecimal(montoStr.replace(",", "."));
+            String totalStr = lblTotal.getText().replace("S/ ", "").replace(",", ".");
+            BigDecimal total = new BigDecimal(totalStr);
+            
+            BigDecimal vuelto = monto.subtract(total);
+            if(vuelto.compareTo(BigDecimal.ZERO) < 0) vuelto = BigDecimal.ZERO;
+            
+            lblVuelto.setText("S/ " + vuelto.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        } catch(Exception e) {
+            lblVuelto.setText("S/ 0.00");
+        }
     }
 }
-

@@ -1,4 +1,7 @@
 package Vista;
+import com.toedter.calendar.JDateChooser;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import Clases.FlujoCaja;
 import Modelo.FlujoCajaDAO;
@@ -14,8 +17,8 @@ import java.util.List;
 
 public class IFrmFlujoCaja extends JInternalFrame {
 
-    private JTextField txtFechaInicio;
-    private JTextField txtFechaFin;
+    private JDateChooser txtFechaInicio;
+    private JDateChooser txtFechaFin;
     private JButton btnFiltrar;
 
     private JLabel lblIngresos;
@@ -43,10 +46,10 @@ public class IFrmFlujoCaja extends JInternalFrame {
     }
 
     private void initComponents() {
-        txtFechaInicio = UIKit.textField();
+        txtFechaInicio = new JDateChooser(); txtFechaInicio.setDateFormatString("dd/MM/yyyy");
         txtFechaInicio.setPreferredSize(new Dimension(140, 36));
         
-        txtFechaFin = UIKit.textField();
+        txtFechaFin = new JDateChooser(); txtFechaFin.setDateFormatString("dd/MM/yyyy");
         txtFechaFin.setPreferredSize(new Dimension(140, 36));
         
         btnFiltrar = UIKit.primaryButton("Filtrar");
@@ -79,13 +82,13 @@ public class IFrmFlujoCaja extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Flujo de Caja", "Finanzas  ›  Flujo de Caja"),
+                UIKit.screenHeader("Flujo de Caja", "Finanzas  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âº  Flujo de Caja"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
         cuerpo.setOpaque(false);
 
-        // ── Panel Superior: Tarjetas KPI y Tipo de Cambio ──
+        // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Panel Superior: Tarjetas KPI y Tipo de Cambio ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
         JPanel pnlSuperior = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
         pnlSuperior.setOpaque(false);
 
@@ -162,7 +165,7 @@ public class IFrmFlujoCaja extends JInternalFrame {
 
         cuerpo.add(pnlSuperior, BorderLayout.NORTH);
 
-        // ── Panel Central: Tabla de Movimientos ──
+        // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Panel Central: Tabla de Movimientos ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
         JPanel pnlCentral = UIKit.card();
         pnlCentral.setLayout(new BorderLayout(0, UIKit.SPACE_MD));
         
@@ -187,7 +190,7 @@ public class IFrmFlujoCaja extends JInternalFrame {
         pnlAcciones.add(pnlFiltros, BorderLayout.WEST);
         pnlAcciones.add(pnlBotonesTabla, BorderLayout.EAST);
 
-        pnlCentral.add(UIKit.sectionHeader("Movimientos del Período", null), BorderLayout.NORTH);
+        pnlCentral.add(UIKit.sectionHeader("Movimientos del PerÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­odo", null), BorderLayout.NORTH);
         
         JPanel pnlInner = new JPanel(new BorderLayout(0, UIKit.SPACE_SM));
         pnlInner.setOpaque(false);
@@ -245,17 +248,17 @@ public class IFrmFlujoCaja extends JInternalFrame {
                 f.setFecha(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
                 f.setTipo(tipo);
                 f.setConcepto(txtConcepto.getText());
-                // CORRECCIÓN: BigDecimal en vez de double para precisión financiera
+                // CORRECCIÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œN: BigDecimal en vez de double para precisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n financiera
                 f.setMonto(new java.math.BigDecimal(txtMonto.getText().replace(",", ".")));
 
                 FlujoCajaDAO dao = new FlujoCajaDAO();
                 dao.guardar(f);
                 cargarFlujo();
             } catch (NumberFormatException nfe) {
-                Utils.LoggerGlobal.error("IFrmFlujoCaja: monto inválido", nfe);
-                JOptionPane.showMessageDialog(this, "Error: ingrese un monto numérico válido (ej: 150.50)");
+                Utils.LoggerGlobal.error("IFrmFlujoCaja: monto invÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡lido", nfe);
+                JOptionPane.showMessageDialog(this, "Error: ingrese un monto numÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rico vÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡lido (ej: 150.50)");
             } catch (Exception ex) {
-                Utils.LoggerGlobal.error("IFrmFlujoCaja.registrarMovimiento() falló", ex);
+                Utils.LoggerGlobal.error("IFrmFlujoCaja.registrarMovimiento() fallÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³", ex);
                 JOptionPane.showMessageDialog(this, "Error al registrar movimiento: " + ex.getMessage());
             }
         }
@@ -266,7 +269,7 @@ public class IFrmFlujoCaja extends JInternalFrame {
         List<FlujoCaja> lista = dao.listarTodos();
         modelMovimientos.setRowCount(0);
         
-        // CORRECCIÓN: acumuladores BigDecimal (2026-06-26 — Auditoría ERP)
+        // CORRECCIÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œN: acumuladores BigDecimal (2026-06-26 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â AuditorÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­a ERP)
         java.math.BigDecimal totalIng = java.math.BigDecimal.ZERO;
         java.math.BigDecimal totalEgr = java.math.BigDecimal.ZERO;
 

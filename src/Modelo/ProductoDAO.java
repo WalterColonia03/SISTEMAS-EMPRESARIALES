@@ -13,11 +13,11 @@ import java.util.List;
 /**
  * DAO para la entidad Producto.
  *
- * CORRECCIONES APLICADAS (2026-06-26T00:53:00-05:00 — Auditoría ERP):
- *   - `double` → `BigDecimal` en precio (precisión financiera).
- *   - `e.printStackTrace()` → `LoggerGlobal.error()` (observabilidad en .jar).
- *   - `SELECT *` → columnas explícitas (Clean Code — evitar mapeos frágiles).
- *     (INSTRUCCIONES_IA_PROYECTO_ERP §2.A, §3.C, §4.1)
+ * CORRECCIONES APLICADAS (2026-06-26T00:53:00-05:00 â€” AuditorÃ­a ERP):
+ *   - `double` â†’ `BigDecimal` en precio (precisiÃ³n financiera).
+ *   - `e.printStackTrace()` â†’ `LoggerGlobal.error()` (observabilidad en .jar).
+ *   - `SELECT *` â†’ columnas explÃ­citas (Clean Code â€” evitar mapeos frÃ¡giles).
+ *     (INSTRUCCIONES_IA_PROYECTO_ERP Â§2.A, Â§3.C, Â§4.1)
  */
 public class ProductoDAO {
 
@@ -45,7 +45,7 @@ public class ProductoDAO {
                 lista.add(p);
             }
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.listarTodos() falló", ex); // CORREGIDO: era printStackTrace
+            LoggerGlobal.error("ProductoDAO.listarTodos() fallÃ³", ex); // CORREGIDO: era printStackTrace
         }
         return lista;
     }
@@ -66,7 +66,7 @@ public class ProductoDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.actualizar() falló para id=" + p.getIdProducto(), ex);
+            LoggerGlobal.error("ProductoDAO.actualizar() fallÃ³ para id=" + p.getIdProducto(), ex);
             return false;
         }
     }
@@ -87,7 +87,7 @@ public class ProductoDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.guardar() falló para producto=" + p.getNombre(), ex);
+            LoggerGlobal.error("ProductoDAO.guardar() fallÃ³ para producto=" + p.getNombre(), ex);
             return false;
         }
     }
@@ -99,7 +99,7 @@ public class ProductoDAO {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.eliminar() falló para id=" + id, ex);
+            LoggerGlobal.error("ProductoDAO.eliminar() fallÃ³ para id=" + id, ex);
             return false;
         }
     }
@@ -111,8 +111,75 @@ public class ProductoDAO {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.generarId() falló", ex);
+            LoggerGlobal.error("ProductoDAO.generarId() fallÃ³", ex);
         }
         return 1;
+    }
+
+    // FR-002/Dashboard: cuenta productos con stock < stockMinimo (default 5)
+    public int contarProductosStockBajo() {
+        String sql = "SELECT COUNT(*) FROM tb_producto WHERE cantidad < COALESCE(stockMinimo, 5) AND estado = 1";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException ex) {
+            LoggerGlobal.error("ProductoDAO.contarProductosStockBajo() fallo", ex);
+        }
+        return 0;
+    }
+
+    // FR-002/FR-018: lista productos con stock bajo para dashboard y reporte
+    public List<Object[]> productosConStockBajo() {
+        List<Object[]> lista = new ArrayList<>();
+        String sql = "SELECT p.idProducto, p.nombre, p.cantidad, COALESCE(p.stockMinimo, 5) AS stockMin, " +
+                     "       (COALESCE(p.stockMinimo, 5) - p.cantidad) AS faltante " +
+                     "FROM tb_producto p WHERE p.cantidad < COALESCE(p.stockMinimo, 5) AND p.estado = 1 " +
+                     "ORDER BY faltante DESC";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                lista.add(new Object[]{ rs.getInt("idProducto"), rs.getString("nombre"), rs.getInt("cantidad"), rs.getInt("stockMin"), rs.getInt("faltante") });
+            }
+        } catch (SQLException ex) {
+            LoggerGlobal.error("ProductoDAO.productosConStockBajo() fallo", ex);
+        }
+        return lista;
+    }
+
+    // Busca producto por nombre exacto (para POS y validaciones)
+    public Producto buscarPorNombre(String nombre) {
+        String sql = "SELECT idProducto,nombre,cantidad,precio,descripcion,idCategoria,estado FROM tb_producto WHERE nombre = ?";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, nombre);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Producto(rs.getInt("idProducto"), rs.getString("nombre"), rs.getInt("cantidad"), rs.getBigDecimal("precio"), rs.getString("descripcion"), rs.getInt("idCategoria"), rs.getInt("estado"));
+                }
+            }
+        } catch (SQLException ex) {
+            LoggerGlobal.error("ProductoDAO.buscarPorNombre() fallo nombre=" + nombre, ex);
+        }
+        return null;
+    }
+
+    // Busca productos cuyo nombre contiene el termino (para POS FR-022)
+    public List<Producto> buscarPorTermino(String termino) {
+        List<Producto> lista = new ArrayList<>();
+        String sql = "SELECT idProducto,nombre,cantidad,precio,descripcion,idCategoria,estado FROM tb_producto WHERE LOWER(nombre) LIKE ? AND estado = 1";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, "%" + termino.toLowerCase() + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(new Producto(rs.getInt("idProducto"), rs.getString("nombre"), rs.getInt("cantidad"), rs.getBigDecimal("precio"), rs.getString("descripcion"), rs.getInt("idCategoria"), rs.getInt("estado")));
+                }
+            }
+        } catch (SQLException ex) {
+            LoggerGlobal.error("ProductoDAO.buscarPorTermino() fallo termino=" + termino, ex);
+        }
+        return lista;
     }
 }

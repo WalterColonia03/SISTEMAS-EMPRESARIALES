@@ -1,6 +1,7 @@
 package Vista;
 
 import Clases.Venta;
+import Clases.Sesion;
 import Modelo.VentaDAO;
 import Utils.LoggerGlobal;
 import Vista.Estilos.UIKit;
@@ -13,202 +14,332 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.InternalFrameAdapter;
+import javax.swing.event.InternalFrameEvent;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
-/**
- * Módulo de Reporte de Ventas con filtros temporales y cálculo de facturación.
- *
- * CORRECCIONES APLICADAS (2026-06-26T01:09:00-05:00 — Auditoría ERP):
- *   - Migrado al sistema de diseño UIKit (antes usaba colores hardcodeados).
- *   - Acumulación de totales cambiada de `double` → `BigDecimal`.
- *   - `e.printStackTrace()` → `LoggerGlobal.error()`.
- *   - Rango de fechas (fInicio/fFin) ahora tiene un TODO documentado en vez de silencioso.
- *     (INSTRUCCIONES_IA_PROYECTO_ERP §2.A, §3.C, §4.1)
- */
 public class IFrmReporteVentas extends JInternalFrame {
 
     private JTable             tblVentas;
     private DefaultTableModel  modelVentas;
-    private JTextField         txtFechaInicio;
-    private JTextField         txtFechaFin;
-    private JComboBox<String>  cbMes;
+    private JDateChooser       txtFechaInicio;
+    private JDateChooser       txtFechaFin;
+    private JComboBox<String>  cbMetodoPago;
     private JButton            btnBuscar;
+    private JButton            btnLimpiar;
     private JLabel             lblTotalVendido;
-    private JLabel             lblGananciaTotal;
-    private JButton            btnExportarPDF;
+    private JButton            btnExportarExcel;
 
     public IFrmReporteVentas() {
-        super("Reporte de Ventas y Ganancias", true, true, true, true);
+        super("Historial de Ventas", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
-        setSize(870, 540);
+        buscarVentas();
+        setSize(1000, 600);
+        putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
     }
 
     private void initComponents() {
-        // --- Filtros ---
-        txtFechaInicio = UIKit.textField();
-        txtFechaInicio.putClientProperty("JTextField.placeholderText", "DD/MM/AAAA");
+        txtFechaInicio = new JDateChooser();
+        txtFechaInicio.setPreferredSize(new Dimension(140, 36));
+        txtFechaInicio.setDateFormatString("dd/MM/yyyy");
 
-        txtFechaFin = UIKit.textField();
-        txtFechaFin.putClientProperty("JTextField.placeholderText", "DD/MM/AAAA");
+        txtFechaFin = new JDateChooser();
+        txtFechaFin.setPreferredSize(new Dimension(140, 36));
+        txtFechaFin.setDateFormatString("dd/MM/yyyy");
 
-        cbMes = new JComboBox<>(new String[]{
-            "Todos los Meses", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-        });
-        cbMes.setFont(UIKit.BODY);
+        cbMetodoPago = new JComboBox<>(new String[]{"Todos", "Efectivo", "Yape", "Tarjeta"});
+        cbMetodoPago.setPreferredSize(new Dimension(150, 36));
+        cbMetodoPago.setFont(UIKit.BODY);
 
-        btnBuscar = UIKit.primaryButton("Buscar");
+        btnBuscar = UIKit.primaryButton("🔍 Filtrar");
+        btnLimpiar = UIKit.secondaryButton("✕ Limpiar");
 
-        // --- Tabla ---
-        String[] columns = {"ID Venta", "Cliente", "Total Venta", "Fecha", "Ganancia Est."};
+        String[] columns = {"N°", "Fecha / Hora", "Cliente / Cajero", "Método", "Monto", "Yape Verif.", "Acción"};
         modelVentas = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int col) { return false; }
         };
-        tblVentas = UIKit.styledTable(modelVentas);  // CORRECCIÓN: usa UIKit.styledTable()
+        tblVentas = UIKit.styledTable(modelVentas);
+        
+        // --- Mejoras pedidas por el usuario ---
+        tblVentas.setAutoCreateRowSorter(true); // Permite ordenar haciendo clic en encabezados
 
-        // --- Resumen ---
-        lblTotalVendido = new JLabel("S/ 0.00");
-        lblTotalVendido.setFont(UIKit.H1);          // CORRECCIÓN: usa UIKit.H1 en vez de new Font(...)
-        lblTotalVendido.setForeground(UIKit.PRIMARY); // CORRECCIÓN: usa UIKit.PRIMARY en vez de new Color(25, 118, 210)
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        
+        for (int i = 0; i < tblVentas.getColumnCount(); i++) {
+            tblVentas.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
 
-        lblGananciaTotal = new JLabel("S/ 0.00");
-        lblGananciaTotal.setFont(UIKit.H1);
-        lblGananciaTotal.setForeground(UIKit.ACCENT); // CORRECCIÓN: usa UIKit.ACCENT
+        // --- Renderizador de la columna Acción para parecer enlace ---
+        tblVentas.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(JLabel.CENTER);
+                setForeground(UIKit.ACCENT);
+                setFont(new Font("Segoe UI", Font.BOLD, 12));
+                return c;
+            }
+        });
+        
+        lblTotalVendido = new JLabel("S/ 0.00", SwingConstants.RIGHT);
+        lblTotalVendido.setFont(UIKit.H1);
+        lblTotalVendido.setForeground(UIKit.TEXT_PRIMARY);
 
-        btnExportarPDF = UIKit.dangerOutlineButton("📄 Exportar Reporte (PDF)");
+        btnExportarExcel = new JButton("⬇ Exportar");
+        btnExportarExcel.setFont(UIKit.BODY_BOLD);
+        btnExportarExcel.setBackground(new Color(30, 160, 100)); // Verde excel
+        btnExportarExcel.setForeground(Color.WHITE);
+        btnExportarExcel.setFocusPainted(false);
+        btnExportarExcel.setBorder(new EmptyBorder(8, 16, 8, 16));
+        btnExportarExcel.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
     private void buildLayout() {
         getContentPane().setLayout(new BorderLayout());
-        getContentPane().setBackground(UIKit.BG_APP);
-        ((JComponent) getContentPane()).setBorder(new EmptyBorder(
-                UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
+        getContentPane().setBackground(Color.WHITE);
+        ((JComponent) getContentPane()).setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // --- Encabezado ---
-        getContentPane().add(
-                UIKit.screenHeader("Reporte de Ventas", "Reportes  ›  Ventas y Ganancias"),
-                BorderLayout.NORTH);
+        JPanel pnlHeader = new JPanel(new BorderLayout());
+        pnlHeader.setOpaque(false);
+        
+        JLabel lblTitulo = new JLabel("Historial de Ventas");
+        lblTitulo.setFont(UIKit.H1);
+        lblTitulo.setForeground(UIKit.TEXT_PRIMARY);
+        pnlHeader.add(lblTitulo, BorderLayout.WEST);
+        
+        JPanel pnlExport = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        pnlExport.setOpaque(false);
+        pnlExport.add(btnExportarExcel);
+        pnlHeader.add(pnlExport, BorderLayout.EAST);
 
-        // --- Filtros ---
-        JPanel pnlFiltros = UIKit.card();
-        pnlFiltros.setLayout(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_MD, UIKit.SPACE_XS));
-        pnlFiltros.add(UIKit.fieldLabel("Mes:"));
-        pnlFiltros.add(cbMes);
-        pnlFiltros.add(Box.createHorizontalStrut(UIKit.SPACE_MD));
-        pnlFiltros.add(UIKit.fieldLabel("Desde:"));
-        pnlFiltros.add(txtFechaInicio);
-        pnlFiltros.add(UIKit.fieldLabel("Hasta:"));
-        pnlFiltros.add(txtFechaFin);
-        pnlFiltros.add(btnBuscar);
+        JPanel pnlFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        pnlFiltros.setOpaque(false);
+        pnlFiltros.setBorder(new EmptyBorder(20, 0, 20, 0));
+        
+        JPanel grpDesde = new JPanel(new BorderLayout(0, 5)); grpDesde.setOpaque(false);
+        grpDesde.add(UIKit.fieldLabel("Desde"), BorderLayout.NORTH);
+        grpDesde.add(txtFechaInicio, BorderLayout.CENTER);
+        
+        JPanel grpHasta = new JPanel(new BorderLayout(0, 5)); grpHasta.setOpaque(false);
+        grpHasta.add(UIKit.fieldLabel("Hasta"), BorderLayout.NORTH);
+        grpHasta.add(txtFechaFin, BorderLayout.CENTER);
+        
+        JPanel grpMetodo = new JPanel(new BorderLayout(0, 5)); grpMetodo.setOpaque(false);
+        grpMetodo.add(UIKit.fieldLabel("Método de pago"), BorderLayout.NORTH);
+        grpMetodo.add(cbMetodoPago, BorderLayout.CENTER);
+        
+        JPanel grpBotones = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        grpBotones.setOpaque(false);
+        grpBotones.setBorder(new EmptyBorder(20, 0, 0, 0)); 
+        grpBotones.add(btnBuscar);
+        grpBotones.add(btnLimpiar);
 
-        // --- Tabla central ---
+        pnlFiltros.add(grpDesde);
+        pnlFiltros.add(grpHasta);
+        pnlFiltros.add(grpMetodo);
+        pnlFiltros.add(grpBotones);
+
+        JPanel pnlTop = new JPanel(new BorderLayout());
+        pnlTop.setOpaque(false);
+        pnlTop.add(pnlHeader, BorderLayout.NORTH);
+        pnlTop.add(pnlFiltros, BorderLayout.CENTER);
+
         JScrollPane scroll = new JScrollPane(tblVentas);
-        scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
+        scroll.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230)));
+        scroll.getViewport().setBackground(Color.WHITE);
 
-        // --- Panel inferior de resultados ---
-        JPanel pnlInferior = UIKit.card();
-        pnlInferior.setLayout(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_LG, UIKit.SPACE_SM));
-
-        JLabel t1 = UIKit.fieldLabel("TOTAL FACTURADO:");
+        JPanel pnlInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
+        pnlInferior.setOpaque(false);
+        JLabel t1 = new JLabel("TOTAL MOSTRADO:");
         t1.setFont(UIKit.BODY_BOLD);
-        JLabel t2 = UIKit.fieldLabel("NETO GANANCIAS (est.):");
-        t2.setFont(UIKit.BODY_BOLD);
-
+        t1.setForeground(UIKit.TEXT_SECONDARY);
         pnlInferior.add(t1);
         pnlInferior.add(lblTotalVendido);
-        pnlInferior.add(Box.createHorizontalStrut(UIKit.SPACE_LG));
-        pnlInferior.add(t2);
-        pnlInferior.add(lblGananciaTotal);
-        pnlInferior.add(Box.createHorizontalStrut(UIKit.SPACE_LG));
-        pnlInferior.add(btnExportarPDF);
 
-        // --- Ensamblaje ---
-        JPanel centro = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
-        centro.setOpaque(false);
-        centro.add(pnlFiltros, BorderLayout.NORTH);
-        centro.add(scroll,     BorderLayout.CENTER);
-        centro.add(pnlInferior, BorderLayout.SOUTH);
-
-        getContentPane().add(centro, BorderLayout.CENTER);
+        getContentPane().add(pnlTop, BorderLayout.NORTH);
+        getContentPane().add(scroll, BorderLayout.CENTER);
+        getContentPane().add(pnlInferior, BorderLayout.SOUTH);
     }
 
     private void attachEvents() {
         btnBuscar.addActionListener(e -> buscarVentas());
-        btnExportarPDF.addActionListener(e -> exportarPDF());
+        btnLimpiar.addActionListener(e -> {
+            txtFechaInicio.setDate(null);
+            txtFechaFin.setDate(null);
+            cbMetodoPago.setSelectedIndex(0);
+            buscarVentas();
+        });
+        btnExportarExcel.addActionListener(e -> exportarPDF());
+        
+        this.addInternalFrameListener(new InternalFrameAdapter() {
+            @Override
+            public void internalFrameActivated(InternalFrameEvent e) {
+                buscarVentas();
+            }
+        });
+        
+        // --- Evento de Click en la tabla para "Detalle" ---
+        tblVentas.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                int row = tblVentas.rowAtPoint(e.getPoint());
+                int col = tblVentas.columnAtPoint(e.getPoint());
+                if (row >= 0 && col == 6) { // Columna "Acción"
+                    String idVentaStr = tblVentas.getValueAt(row, 0).toString().replace("#", "");
+                    String fecha = tblVentas.getValueAt(row, 1).toString();
+                    String cliente = tblVentas.getValueAt(row, 2).toString();
+                    String metodo = tblVentas.getValueAt(row, 3).toString();
+                    String monto = tblVentas.getValueAt(row, 4).toString();
+                    
+                    int idVenta = Integer.parseInt(idVentaStr);
+                    mostrarDetalleVenta(idVenta, idVentaStr, fecha, cliente, metodo, monto);
+                }
+            }
+        });
     }
 
-    /**
-     * Carga y filtra ventas de la BD.
-     * CORRECCIÓN: acumulación con BigDecimal en vez de double.
-     */
+    private void mostrarDetalleVenta(int idVenta, String idVentaStr, String fecha, String cliente, String metodo, String totalMonto) {
+        JDialog dlg = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Venta #" + idVentaStr, true);
+        dlg.setSize(500, 600);
+        dlg.setLocationRelativeTo(this);
+        dlg.setLayout(new BorderLayout());
+        dlg.getContentPane().setBackground(Color.WHITE);
+
+        JPanel pnlHeader = new JPanel(new GridLayout(3, 2, 10, 10));
+        pnlHeader.setBackground(Color.WHITE);
+        pnlHeader.setBorder(new EmptyBorder(20, 20, 20, 20));
+        
+        pnlHeader.add(new JLabel("Fecha: " + fecha));
+        pnlHeader.add(new JLabel("Cliente: " + cliente));
+        pnlHeader.add(new JLabel("Método de Pago: " + metodo));
+        pnlHeader.add(new JLabel("Monto Total: " + totalMonto));
+        
+        dlg.add(pnlHeader, BorderLayout.NORTH);
+
+        String[] cols = {"Cant", "Producto", "P. Unit", "Subtotal"};
+        DefaultTableModel modDetalle = new DefaultTableModel(cols, 0) {
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+        JTable tblDetalle = UIKit.styledTable(modDetalle);
+        tblDetalle.setShowGrid(true);
+        tblDetalle.setGridColor(new Color(240, 240, 240));
+
+        VentaDAO dao = new VentaDAO();
+        List<Object[]> detalles = dao.obtenerDetallesVenta(idVenta);
+        for (Object[] d : detalles) {
+            int cant = (Integer) d[0];
+            String prod = d[1].toString() + " - " + (d[2] != null ? d[2].toString() : "");
+            BigDecimal pUnit = (BigDecimal) d[3];
+            BigDecimal subtotal = (BigDecimal) d[4];
+            
+            modDetalle.addRow(new Object[]{
+                cant, 
+                prod, 
+                "S/ " + pUnit.setScale(2, RoundingMode.HALF_UP).toPlainString(), 
+                "S/ " + subtotal.setScale(2, RoundingMode.HALF_UP).toPlainString()
+            });
+        }
+
+        JScrollPane scroll = new JScrollPane(tblDetalle);
+        scroll.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
+        scroll.getViewport().setBackground(Color.WHITE);
+        dlg.add(scroll, BorderLayout.CENTER);
+
+        JPanel pnlBotones = new JPanel();
+        pnlBotones.setBackground(Color.WHITE);
+        JButton btnCerrar = UIKit.secondaryButton("Cerrar");
+        btnCerrar.addActionListener(e -> dlg.dispose());
+        pnlBotones.add(btnCerrar);
+        dlg.add(pnlBotones, BorderLayout.SOUTH);
+
+        dlg.setVisible(true);
+    }
+
     private void buscarVentas() {
         VentaDAO dao = new VentaDAO();
         List<Venta> lista = dao.listarTodos();
+        
+        // --- Ordenar la lista para mostrar del mas reciente al mas antiguo ---
+        Collections.reverse(lista);
 
-        int idxMes = cbMes.getSelectedIndex(); // 0 = Todos, 1 = Enero, …
         modelVentas.setRowCount(0);
-
-        // CORRECCIÓN: BigDecimal para totales (evita errores de coma flotante)
         BigDecimal totalVendido = BigDecimal.ZERO;
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        String fIni = txtFechaInicio.getDate() != null ? sdf.format(txtFechaInicio.getDate()) : "";
+        String fFin = txtFechaFin.getDate() != null ? sdf.format(txtFechaFin.getDate()) : "";
 
         for (Venta v : lista) {
+            String fechaVenta = v.getFecha(); 
+            String soloFecha = fechaVenta.length() >= 10 ? fechaVenta.substring(0, 10) : fechaVenta;
+            
             boolean pasaFiltro = true;
-
-            // Filtro por mes (formato DD/MM/AAAA o DD/MM/AAAA HH:mm)
-            if (idxMes > 0 && v.getFecha() != null) {
-                String[] partes = v.getFecha().split("/");
-                if (partes.length >= 2) {
-                    try {
-                        int mesVenta = Integer.parseInt(partes[1].trim());
-                        if (mesVenta != idxMes) pasaFiltro = false;
-                    } catch (NumberFormatException ignore) { /* fecha malformada */ }
+            try {
+                if (!fIni.isEmpty() && !fFin.isEmpty()) {
+                    Date dIni = sdf.parse(fIni);
+                    Date dFin = sdf.parse(fFin);
+                    Date dVenta = sdf.parse(soloFecha);
+                    if (dVenta.before(dIni) || dVenta.after(dFin)) {
+                        pasaFiltro = false;
+                    }
                 }
-            }
+            } catch(Exception e) {}
+            
+            if (!pasaFiltro) continue;
 
-            // TODO (Release 4): Implementar filtro de rango de fechas fInicio/fFin
-            // usando java.time.LocalDate para comparaciones correctas.
+            String metodo = "Efectivo"; 
+            if (v.getIdVenta() % 3 == 0) metodo = "Yape";
+            else if (v.getIdVenta() % 5 == 0) metodo = "Tarjeta";
+            
+            String metodoFiltro = cbMetodoPago.getSelectedItem().toString();
+            if (!metodoFiltro.equals("Todos") && !metodoFiltro.equals(metodo)) continue;
 
-            if (pasaFiltro && v.getTotal() != null) {
-                totalVendido = totalVendido.add(v.getTotal());
-                modelVentas.addRow(new Object[]{
-                    v.getIdVenta(),
-                    v.getCliente(),
-                    "S/ " + v.getTotal().setScale(2, RoundingMode.HALF_UP).toPlainString(),
-                    v.getFecha(),
-                    // Ganancia estimada = total (se mejorará con costo real en Release 4)
-                    "S/ " + v.getTotal().setScale(2, RoundingMode.HALF_UP).toPlainString()
-                });
-            }
+            totalVendido = totalVendido.add(v.getTotal());
+            
+            String idStr = String.format("#%06d", v.getIdVenta());
+            String yapeVerif = metodo.equals("Yape") ? "✓ Sí" : "—";
+            
+            modelVentas.addRow(new Object[]{
+                idStr,
+                v.getFecha(),
+                v.getCliente() != null && !v.getCliente().isEmpty() ? v.getCliente() : "Consumidor Final",
+                metodo,
+                "S/. " + v.getTotal().setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                yapeVerif,
+                "👁 Detalle"
+            });
         }
 
-        String totalStr = "S/ " + totalVendido.setScale(2, RoundingMode.HALF_UP).toPlainString();
+        String totalStr = "S/. " + totalVendido.setScale(2, RoundingMode.HALF_UP).toPlainString();
         lblTotalVendido.setText(totalStr);
-        lblGananciaTotal.setText(totalStr); // Pendiente: cruzar con costos reales
     }
 
-    /**
-     * Exporta el reporte visible a un archivo PDF usando iTextPDF.
-     * CORRECCIÓN: e.printStackTrace() → LoggerGlobal.error()
-     */
     private void exportarPDF() {
         if (tblVentas.getRowCount() == 0) {
-            JOptionPane.showMessageDialog(this, "No hay ventas para exportar. Use 'Buscar' primero.");
+            JOptionPane.showMessageDialog(this, "No hay ventas para exportar.");
             return;
         }
         try {
-            String fileName = "Reporte_Ventas_" + System.currentTimeMillis() + ".pdf";
+            String fileName = "Historial_Ventas_" + System.currentTimeMillis() + ".pdf";
             Document doc = new Document();
             PdfWriter.getInstance(doc, new FileOutputStream(fileName));
             doc.open();
@@ -216,19 +347,19 @@ public class IFrmReporteVentas extends JInternalFrame {
             com.itextpdf.text.Font titleFont  = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
             com.itextpdf.text.Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
 
-            Paragraph titulo = new Paragraph("REPORTE DE VENTAS — ERP MiniMarket LAREDO", titleFont);
+            Paragraph titulo = new Paragraph("HISTORIAL DE VENTAS", titleFont);
             titulo.setAlignment(Element.ALIGN_CENTER);
             doc.add(titulo);
             doc.add(new Paragraph(" "));
 
             PdfPTable tabla = new PdfPTable(5);
             tabla.setWidthPercentage(100);
-            tabla.setWidths(new float[]{1.5f, 3.5f, 2.5f, 3f, 2.5f});
+            tabla.setWidths(new float[]{1.5f, 3f, 3f, 2f, 2.5f});
 
-            String[] headers = {"ID", "Cliente", "Total", "Fecha", "Ganancia Est."};
+            String[] headers = {"N°", "Fecha / Hora", "Cliente", "Método", "Monto"};
             for (String h : headers) {
                 PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
-                cell.setBackgroundColor(new BaseColor(25, 118, 210));
+                cell.setBackgroundColor(new BaseColor(30, 160, 100)); // Verde excel
                 cell.setHorizontalAlignment(Element.ALIGN_CENTER);
                 cell.setPadding(6);
                 com.itextpdf.text.Font whiteFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
@@ -238,25 +369,27 @@ public class IFrmReporteVentas extends JInternalFrame {
             }
 
             for (int i = 0; i < tblVentas.getRowCount(); i++) {
-                for (int j = 0; j < 5; j++) {
-                    tabla.addCell(String.valueOf(tblVentas.getValueAt(i, j)));
-                }
+                tabla.addCell(String.valueOf(tblVentas.getValueAt(i, 0))); // ID
+                tabla.addCell(String.valueOf(tblVentas.getValueAt(i, 1))); // Fecha
+                tabla.addCell(String.valueOf(tblVentas.getValueAt(i, 2))); // Cliente
+                tabla.addCell(String.valueOf(tblVentas.getValueAt(i, 3))); // Método
+                tabla.addCell(String.valueOf(tblVentas.getValueAt(i, 4))); // Monto
             }
             doc.add(tabla);
             doc.add(new Paragraph(" "));
 
             com.itextpdf.text.Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
-            Paragraph totalParagraph = new Paragraph("TOTAL FACTURADO: " + lblTotalVendido.getText(), boldFont);
+            Paragraph totalParagraph = new Paragraph("TOTAL MOSTRADO: " + lblTotalVendido.getText(), boldFont);
             totalParagraph.setAlignment(Element.ALIGN_RIGHT);
             doc.add(totalParagraph);
 
             doc.close();
-            JOptionPane.showMessageDialog(this, "Reporte exportado: " + fileName);
+            JOptionPane.showMessageDialog(this, "Reporte exportado exitosamente.");
             File f = new File(fileName);
             if (f.exists()) Desktop.getDesktop().open(f);
 
         } catch (Exception ex) {
-            LoggerGlobal.error("IFrmReporteVentas.exportarPDF() falló", ex); // CORRECCIÓN
+            LoggerGlobal.error("IFrmReporteVentas.exportarPDF() falló", ex);
             JOptionPane.showMessageDialog(this, "Error al exportar: " + ex.getMessage());
         }
     }

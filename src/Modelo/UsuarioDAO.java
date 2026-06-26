@@ -12,18 +12,18 @@ import java.util.List;
 /**
  * DAO para la entidad Usuario.
  *
- * CORRECCIONES APLICADAS (2026-06-26T00:53:00-05:00 — Auditoría ERP):
- *   - `e.printStackTrace()` → `LoggerGlobal.error()` (observabilidad).
- *   - `SELECT *` → columnas explícitas (Clean Code).
- *   - Las contraseñas se almacenan como hash SHA-256 via PasswordUtils.
- *     La verificación de login se hace con PasswordUtils.verifyPassword().
- *     (INSTRUCCIONES_IA_PROYECTO_ERP §3.D — OWASP A02)
+ * CORRECCIONES APLICADAS (2026-06-26T00:53:00-05:00 Ã¢â‚¬â€ AuditorÃƒÂ­a ERP):
+ *   - `e.printStackTrace()` Ã¢â€ â€™ `LoggerGlobal.error()` (observabilidad).
+ *   - `SELECT *` Ã¢â€ â€™ columnas explÃƒÂ­citas (Clean Code).
+ *   - Las contraseÃƒÂ±as se almacenan como hash SHA-256 via PasswordUtils.
+ *     La verificaciÃƒÂ³n de login se hace con PasswordUtils.verifyPassword().
+ *     (INSTRUCCIONES_IA_PROYECTO_ERP Ã‚Â§3.D Ã¢â‚¬â€ OWASP A02)
  */
 public class UsuarioDAO {
 
     public List<Usuario> listarTodos() {
         List<Usuario> lista = new ArrayList<>();
-        String sql = "SELECT idUsuario, nombre, apellido, usuario, password, telefono, rol, estado " +
+        String sql = "SELECT idUsuario, nombre, apellido, usuario, password, telefono, rol, estado, sesion_activa " +
                      "FROM tb_usuario";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -40,10 +40,11 @@ public class UsuarioDAO {
                         rs.getString("rol"),
                         rs.getInt("estado")
                 );
+                u.setSesionActiva(rs.getInt("sesion_activa"));
                 lista.add(u);
             }
         } catch (SQLException ex) {
-            LoggerGlobal.error("UsuarioDAO.listarTodos() falló", ex);
+            LoggerGlobal.error("UsuarioDAO.listarTodos() fallÃƒÂ³", ex);
         }
         return lista;
     }
@@ -65,7 +66,7 @@ public class UsuarioDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("UsuarioDAO.actualizar() falló para id=" + u.getIdUsuario(), ex);
+            LoggerGlobal.error("UsuarioDAO.actualizar() fallÃƒÂ³ para id=" + u.getIdUsuario(), ex);
             return false;
         }
     }
@@ -87,7 +88,7 @@ public class UsuarioDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("UsuarioDAO.guardar() falló para usuario=" + u.getUsuario(), ex);
+            LoggerGlobal.error("UsuarioDAO.guardar() fallÃƒÂ³ para usuario=" + u.getUsuario(), ex);
             return false;
         }
     }
@@ -99,7 +100,7 @@ public class UsuarioDAO {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("UsuarioDAO.eliminar() falló para id=" + id, ex);
+            LoggerGlobal.error("UsuarioDAO.eliminar() fallÃƒÂ³ para id=" + id, ex);
             return false;
         }
     }
@@ -111,8 +112,20 @@ public class UsuarioDAO {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException ex) {
-            LoggerGlobal.error("UsuarioDAO.generarId() falló", ex);
+            LoggerGlobal.error("UsuarioDAO.generarId() fallÃƒÂ³", ex);
         }
         return 1;
+    }
+
+    public void cambiarEstadoSesion(String usuarioStr, int activa) {
+        String sql = "UPDATE tb_usuario SET sesion_activa = ? WHERE usuario = ?";
+        try (java.sql.Connection conn = ConexionDB.getConexion();
+             java.sql.PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, activa);
+            ps.setString(2, usuarioStr);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            Utils.LoggerGlobal.error("Error al actualizar sesion_activa", e);
+        }
     }
 }

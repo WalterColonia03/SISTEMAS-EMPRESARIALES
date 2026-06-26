@@ -15,13 +15,13 @@ import Clases.Usuario;
 import Modelo.BitacoraDAO;
 import Modelo.UsuarioDAO;
 import Utils.LoggerGlobal;
-import Utils.PasswordUtils;         // CORREGIDO: importado para verificación segura de contraseñas
+import Utils.PasswordUtils;         // CORREGIDO: importado para verificaciÃ³n segura de contraseÃ±as
 import Vista.Estilos.UIKit;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.FlatClientProperties;
 
 /**
- * FrmLogin - Pantalla de inicio de sesión moderna y sin bordes (Patrón G).
+ * FrmLogin - Pantalla de inicio de sesiÃ³n moderna y sin bordes (PatrÃ³n G).
  */
 public class FrmLogin extends JFrame {
 
@@ -50,7 +50,7 @@ public class FrmLogin extends JFrame {
 
     private void initComponents() {
         txtUsuario  = buildTextField("Ingrese su usuario");
-        txtPassword = buildPasswordField("••••••••");
+        txtPassword = buildPasswordField("â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢");
         btnIngresar = UIKit.primaryButton("Ingresar");
         
         btnSalir = new JButton("Salir del sistema");
@@ -103,7 +103,7 @@ public class FrmLogin extends JFrame {
         pnlLeft.add(lblBrand, gbcLeft);
 
         gbcLeft.gridy = 2;
-        JLabel lblSlogan = new JLabel("Sistema de Gestión Empresarial");
+        JLabel lblSlogan = new JLabel("Sistema de GestiÃ³n Empresarial");
         lblSlogan.setFont(UIKit.SUBTITLE);
         lblSlogan.setForeground(new Color(255, 255, 255, 180));
         pnlLeft.add(lblSlogan, gbcLeft);
@@ -124,7 +124,7 @@ public class FrmLogin extends JFrame {
         gbc.anchor  = GridBagConstraints.CENTER;
         gbc.weightx = 1.0;
 
-        // Título
+        // TÃ­tulo
         gbc.gridy  = 0;
         gbc.insets = new Insets(0, 0, 30, 0);
         JLabel lblTitulo = new JLabel("Bienvenido", SwingConstants.CENTER);
@@ -142,30 +142,30 @@ public class FrmLogin extends JFrame {
         gbc.insets = new Insets(0, 0, 16, 0);
         pnlCard.add(txtUsuario, gbc);
 
-        // Etiqueta Contraseña
+        // Etiqueta ContraseÃ±a
         gbc.gridy  = 3;
         gbc.insets = new Insets(0, 0, 5, 0);
-        pnlCard.add(UIKit.fieldLabel("Contraseña"), gbc);
+        pnlCard.add(UIKit.fieldLabel("ContraseÃ±a"), gbc);
 
-        // Campo Contraseña
+        // Campo ContraseÃ±a
         gbc.gridy  = 4;
         gbc.insets = new Insets(0, 0, 30, 0);
         pnlCard.add(txtPassword, gbc);
 
-        // Botón Ingresar
+        // BotÃ³n Ingresar
         gbc.gridy  = 5;
         gbc.insets = new Insets(0, 0, 20, 0);
         pnlCard.add(btnIngresar, gbc);
 
-        // Botón Salir
+        // BotÃ³n Salir
         gbc.gridy  = 6;
         gbc.insets = new Insets(0, 0, 20, 0);
         pnlCard.add(btnSalir, gbc);
 
-        // Pie de versión
+        // Pie de versiÃ³n
         gbc.gridy  = 7;
         gbc.insets = new Insets(10, 0, 0, 0);
-        JLabel lblVersion = new JLabel("ERP v1.0.0 · Minimarket LAREDO © 2025", SwingConstants.CENTER);
+        JLabel lblVersion = new JLabel("ERP v1.0.0 Â· Minimarket LAREDO Â© 2025", SwingConstants.CENTER);
         lblVersion.setFont(UIKit.CAPTION);
         lblVersion.setForeground(UIKit.TEXT_SECONDARY);
         pnlCard.add(lblVersion, gbc);
@@ -198,7 +198,7 @@ public class FrmLogin extends JFrame {
             String user = txtUsuario.getText().trim();
             if (user.isEmpty()) return;
 
-            // Verificar si el usuario está bloqueado
+            // Verificar si el usuario estÃ¡ bloqueado
             if (tiempoBloqueo.containsKey(user)) {
                 long bloqueadoHasta = tiempoBloqueo.get(user);
                 long restante = bloqueadoHasta - System.currentTimeMillis();
@@ -208,7 +208,7 @@ public class FrmLogin extends JFrame {
                     LoggerGlobal.log("Intento de login bloqueado para usuario: " + user);
                     return;
                 } else {
-                    // Desbloquear si ya pasó el tiempo
+                    // Desbloquear si ya pasÃ³ el tiempo
                     tiempoBloqueo.remove(user);
                     intentosFallidos.put(user, 0);
                 }
@@ -226,9 +226,20 @@ public class FrmLogin extends JFrame {
                 boolean encontrado = false;
 
                 for (Usuario u : lista) {
-                    // CORRECCIÓN OWASP A02: comparación con hash SHA-256, no texto plano
+                    // CORRECCIÃ“N OWASP A02: comparaciÃ³n con hash SHA-256, no texto plano
                     if (u.getUsuario().equals(user) && PasswordUtils.verifyPassword(pass, u.getPassword())) {
                         encontrado = true;
+
+                        if (u.getSesionActiva() == 1) {
+                            int op = JOptionPane.showConfirmDialog(this, "Esta cuenta ya está en uso en otro dispositivo.\n¿Desea cerrar la sesión anterior forzosamente e ingresar aquí?", "Sesión Duplicada", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                            if (op != JOptionPane.YES_OPTION) {
+                                btnIngresar.setEnabled(true);
+                                btnIngresar.setText("Ingresar");
+                                return;
+                            }
+                        }
+                        
+                        dao.cambiarEstadoSesion(u.getUsuario(), 1);
 
                         // FR-020-v2 CA-1: registrar login exitoso en bitácora
                         intentosFallidos.put(user, 0);
@@ -265,7 +276,7 @@ public class FrmLogin extends JFrame {
                             "Bloqueada tras " + MAX_INTENTOS + " intentos"
                         );
                         JOptionPane.showMessageDialog(this,
-                            "Usuario o contraseña incorrectos.\nCUENTA BLOQUEADA por 15 minutos.");
+                            "Usuario o contraseÃ±a incorrectos.\nCUENTA BLOQUEADA por 15 minutos.");
                     } else {
                         // FR-020-v2 CA-2: registrar intento fallido
                         Utils.BitacoraService.registrar(
@@ -276,7 +287,7 @@ public class FrmLogin extends JFrame {
                             "Intento " + intentos + " de " + MAX_INTENTOS
                         );
                         JOptionPane.showMessageDialog(this,
-                            "Usuario o contraseña incorrectos.\nIntentos restantes: " + (MAX_INTENTOS - intentos));
+                            "Usuario o contraseÃ±a incorrectos.\nIntentos restantes: " + (MAX_INTENTOS - intentos));
                     }
 
                     btnIngresar.setEnabled(true);
@@ -324,7 +335,7 @@ public class FrmLogin extends JFrame {
     public static void main(String[] args) {
         FlatLightLaf.setup();
 
-        // Radios y overrides globales del sistema de diseño
+        // Radios y overrides globales del sistema de diseÃ±o
         UIManager.put("Button.arc", 8);
         UIManager.put("Component.arc", 8);
         UIManager.put("TextComponent.arc", 8);

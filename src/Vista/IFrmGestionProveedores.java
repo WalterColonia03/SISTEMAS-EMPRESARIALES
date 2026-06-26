@@ -61,6 +61,55 @@ public class IFrmGestionProveedores extends JInternalFrame {
         txtCorreo = UIKit.textField();
         txtDireccion = UIKit.textField();
         
+        // --- Validaciones en Vivo ---
+        java.awt.event.KeyAdapter numericoLimitado = new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                char c = e.getKeyChar();
+                JTextField field = (JTextField) e.getSource();
+                int maxLength = (field == txtTelefono) ? 15 : 11; // Teléfono hasta 15, RUC exactamente 11
+                
+                if (!Character.isDigit(c)) {
+                    e.consume(); // Bloquea si no es número
+                    Toolkit.getDefaultToolkit().beep();
+                } else if (field.getText().length() >= maxLength) {
+                    e.consume(); // Bloquea si excede el límite
+                    Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        };
+        
+        txtRuc.addKeyListener(numericoLimitado);
+        txtBuscarRuc.addKeyListener(numericoLimitado);
+        txtTelefono.addKeyListener(numericoLimitado);
+
+        txtCorreo.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                if (e.getKeyChar() == ' ') {
+                    e.consume(); // Los correos no llevan espacios
+                    Toolkit.getDefaultToolkit().beep();
+                } else if (txtCorreo.getText().length() >= 80) {
+                    e.consume();
+                    Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        });
+        
+        java.awt.event.KeyAdapter limite100 = new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent e) {
+                JTextField field = (JTextField) e.getSource();
+                if (field.getText().length() >= 100) {
+                    e.consume();
+                    Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        };
+        txtRazonSocial.addKeyListener(limite100);
+        txtContacto.addKeyListener(limite100);
+        txtDireccion.addKeyListener(limite100);
+        
         cbEstado = new JComboBox<>(new String[]{"Activo", "Inactivo"});
         cbEstado.setFont(UIKit.BODY);
 
@@ -281,8 +330,14 @@ public class IFrmGestionProveedores extends JInternalFrame {
                 JOptionPane.showMessageDialog(this, "RUC y Razón Social son obligatorios");
                 return;
             }
-            if (ruc.length() != 11 || (!ruc.startsWith("10") && !ruc.startsWith("20"))) {
-                JOptionPane.showMessageDialog(this, "RUC inválido (Debe tener 11 dígitos y empezar con 10 o 20)");
+            if (!ruc.matches("^(10|20)\\d{9}$")) {
+                JOptionPane.showMessageDialog(this, "RUC inválido (Debe tener exactamente 11 dígitos numéricos y empezar con 10 o 20)");
+                return;
+            }
+            
+            String telefono = txtTelefono.getText().trim();
+            if (!telefono.isEmpty() && !telefono.matches("^[0-9]{7,15}$")) {
+                JOptionPane.showMessageDialog(this, "Teléfono inválido. Solo se permiten números (entre 7 y 15 dígitos).");
                 return;
             }
             

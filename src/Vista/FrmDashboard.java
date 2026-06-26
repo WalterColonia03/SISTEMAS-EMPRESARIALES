@@ -10,10 +10,6 @@ import Clases.Sesion;
 import Utils.LoggerGlobal;
 import Vista.Estilos.UIKit;
 
-/**
- * FrmDashboard - Contenedor principal MDI (pantalla completa) con menú lateral.
- * Rediseñado con UIKit (Patrones F y navegación agrupada).
- */
 public class FrmDashboard extends JFrame {
 
     private JDesktopPane desktopPane;
@@ -21,30 +17,28 @@ public class FrmDashboard extends JFrame {
     private JPanel pnlTopBar;
     private JLabel lblBreadcrumb;
     
-    // Botones del menú lateral agrupados
-    // Ventas
     private JButton btnPOS, btnVentas, btnDevoluciones, btnFidelizacion;
-    // Clientes y Proveedores
     private JButton btnClientes, btnProveedores;
-    // Inventario
     private JButton btnCategorias, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario;
-    // Compras
     private JButton btnCompras;
-    // Finanzas y Reportes
     private JButton btnFlujoCaja, btnLibroMayor, btnCuentasCP, btnRepVentas, btnReportesAvanzados;
-    // Personal
     private JButton btnEmpleados, btnPlanilla;
-    // Administración
     private JButton btnUsuarios, btnAuditoria, btnConfig;
-    
     private JButton btnLogout;
     
-    // Botón actualmente seleccionado en el sidebar
-    private JButton btnSeleccionado = null;
+    private JPanel grpInventario, grpCompras, grpPersonal, grpAdmin, grpFinanzas;
 
-    // Seguridad: Timer de Inactividad (FR-040)
+    private JButton btnSeleccionado = null;
     private Timer inactividadTimer;
-    private static final int TIEMPO_INACTIVIDAD = 30 * 60 * 1000; // 30 minutos
+    private Timer refreshTimer;
+    private static final int TIEMPO_INACTIVIDAD = 30 * 60 * 1000;
+
+    // Componentes del Dashboard a actualizar en tiempo real
+    private JLabel lblVentasHoy, lblSubVentasHoy;
+    private JLabel lblVentasSemana, lblSubVentasSemana;
+    private JLabel lblAlertasStock, lblSubAlertasStock;
+    private DefaultTableModel modelAlert;
+    private DefaultTableModel modelSales;
 
     public FrmDashboard() {
         super("Minimarket LAREDO - Sistema ERP");
@@ -54,19 +48,14 @@ public class FrmDashboard extends JFrame {
         aplicarRol();
         configFrame();
         iniciarTimerInactividad();
+        iniciarTimerRefresco();
     }
 
     private void iniciarTimerInactividad() {
         inactividadTimer = new Timer(TIEMPO_INACTIVIDAD, e -> {
-            // FR-020-v2 CA-2: registrar cierre por inactividad
-            Utils.BitacoraService.registrar(
-                Sesion.getUsuario(),
-                Utils.BitacoraService.MOD_LOGIN,
-                "CIERRE_INACTIVIDAD",
-                Utils.BitacoraService.OK,
-                "Sesion cerrada por inactividad (30 min)"
-            );
-            JOptionPane.showMessageDialog(this, "Sesión cerrada por inactividad (30 minutos).", "Seguridad", JOptionPane.WARNING_MESSAGE);
+            new Modelo.UsuarioDAO().cambiarEstadoSesion(Sesion.getUsuario(), 0);
+            Utils.BitacoraService.registrar(Sesion.getUsuario(), Utils.BitacoraService.MOD_LOGIN, "CIERRE_INACTIVIDAD", Utils.BitacoraService.OK, "Sesion cerrada por inactividad");
+            JOptionPane.showMessageDialog(this, "SesiÃ³n cerrada por inactividad (30 minutos).", "Seguridad", JOptionPane.WARNING_MESSAGE);
             new FrmLogin().setVisible(true);
             this.dispose();
         });
@@ -74,59 +63,51 @@ public class FrmDashboard extends JFrame {
         inactividadTimer.start();
 
         long eventMask = AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.KEY_EVENT_MASK;
-        Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
-            inactividadTimer.restart();
-        }, eventMask);
+        Toolkit.getDefaultToolkit().addAWTEventListener(event -> inactividadTimer.restart(), eventMask);
+    }
+    
+    private void iniciarTimerRefresco() {
+        refreshTimer = new Timer(5000, e -> updateBgDashboard()); // Actualizar cada 5 segundos
+        refreshTimer.start();
     }
 
     private void initComponents() {
         desktopPane = new JDesktopPane();
         desktopPane.setBackground(UIKit.BG_APP);
 
-        // Instanciar botones del menú sin emojis
         btnPOS = buildMenuButton("Punto de Venta (POS)");
-        btnVentas = buildMenuButton("Gestión de Ventas");
         btnDevoluciones = buildMenuButton("Devoluciones");
-        btnFidelizacion = buildMenuButton("Fidelización");
-        
+        btnFidelizacion = buildMenuButton("FidelizaciÃ³n");
         btnClientes = buildMenuButton("Clientes");
         btnProveedores = buildMenuButton("Proveedores");
-        
-        btnCategorias = buildMenuButton("Categorías");
+        btnCategorias = buildMenuButton("CategorÃ­as");
         btnProductos = buildMenuButton("Productos");
         btnKardex = buildMenuButton("Kardex");
         btnAlertasInventario = buildMenuButton("Alertas de Inventario");
         btnRepInventario = buildMenuButton("Reporte de Inventario");
-        
         btnCompras = buildMenuButton("Registro de Compras");
-        
-        btnFlujoCaja            = buildMenuButton("Flujo de Caja");
-        btnLibroMayor           = buildMenuButton("Libro Mayor");
-        btnCuentasCP            = buildMenuButton("Cuentas por Cobrar y Pagar");
-        btnRepVentas            = buildMenuButton("Reporte de Ventas");
-        btnReportesAvanzados    = buildMenuButton("Reportes Avanzados (BI)");
-        
+        btnFlujoCaja = buildMenuButton("Flujo de Caja");
+        btnLibroMayor = buildMenuButton("Libro Mayor");
+        btnCuentasCP = buildMenuButton("Cuentas por Cobrar y Pagar");
+        btnRepVentas = buildMenuButton("Historial de Ventas");
+        btnReportesAvanzados = buildMenuButton("Reportes Avanzados (BI)");
         btnEmpleados = buildMenuButton("Ficha de Empleados");
         btnPlanilla = buildMenuButton("Planilla y Asistencia");
-        
-        btnUsuarios = buildMenuButton("Gestión Usuarios");
-        btnAuditoria = buildMenuButton("Bitácora Auditoría");
-        btnConfig = buildMenuButton("Configuración ERP");
-        
-        btnLogout = buildMenuButton("Cerrar Sesión");
+        btnUsuarios = buildMenuButton("GestiÃ³n Usuarios");
+        btnAuditoria = buildMenuButton("BitÃ¡cora AuditorÃ­a");
+        btnConfig = buildMenuButton("ConfiguraciÃ³n ERP");
+        btnLogout = buildMenuButton("Cerrar SesiÃ³n");
     }
 
     private void buildLayout() {
         setLayout(new BorderLayout());
 
-        // ── Menú lateral (WEST) ──────────────────────────
         JPanel pnlSidebar = new JPanel();
         pnlSidebar.setLayout(new BoxLayout(pnlSidebar, BoxLayout.Y_AXIS));
         pnlSidebar.setBackground(UIKit.PRIMARY);
         pnlSidebar.setPreferredSize(new Dimension(260, 0));
         pnlSidebar.setBorder(new EmptyBorder(15, 0, 15, 0));
 
-        // Logo / Cabecera Sidebar
         JLabel lblLogo = new JLabel("Minimarket LAREDO", SwingConstants.CENTER);
         lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblLogo.setForeground(Color.WHITE);
@@ -134,20 +115,28 @@ public class FrmDashboard extends JFrame {
         lblLogo.setBorder(new EmptyBorder(10, 0, 20, 0));
         pnlSidebar.add(lblLogo);
 
-        // Contenedor scrolleable para el sidebar
         JPanel pnlMenuContainer = new JPanel();
         pnlMenuContainer.setLayout(new BoxLayout(pnlMenuContainer, BoxLayout.Y_AXIS));
         pnlMenuContainer.setBackground(UIKit.PRIMARY);
 
-        pnlMenuContainer.add(navGroup("Ventas", btnPOS, btnVentas, btnDevoluciones, btnFidelizacion));
+        pnlMenuContainer.add(navGroup("Ventas", btnPOS, btnDevoluciones, btnFidelizacion));
         pnlMenuContainer.add(navGroup("Clientes y Proveedores", btnClientes, btnProveedores));
-        pnlMenuContainer.add(navGroup("Inventario", btnCategorias, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario));
-        pnlMenuContainer.add(navGroup("Compras", btnCompras));
-        pnlMenuContainer.add(navGroup("Finanzas y Reportes",
-            btnFlujoCaja, btnLibroMayor, btnCuentasCP,
-            btnRepVentas, btnReportesAvanzados));
-        pnlMenuContainer.add(navGroup("Personal", btnEmpleados, btnPlanilla));
-        pnlMenuContainer.add(navGroup("Administración", btnUsuarios, btnAuditoria, btnConfig));
+        
+        grpInventario = navGroup("Inventario", btnCategorias, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario);
+        pnlMenuContainer.add(grpInventario);
+        
+        grpCompras = navGroup("Compras", btnCompras);
+        pnlMenuContainer.add(grpCompras);
+        
+        grpFinanzas = navGroup("Finanzas y Reportes", btnFlujoCaja, btnLibroMayor, btnCuentasCP, btnRepVentas, btnReportesAvanzados);
+        pnlMenuContainer.add(grpFinanzas);
+        
+        grpPersonal = navGroup("Personal", btnEmpleados, btnPlanilla);
+        pnlMenuContainer.add(grpPersonal);
+        
+        grpAdmin = navGroup("AdministraciÃ³n", btnUsuarios, btnAuditoria, btnConfig);
+        pnlMenuContainer.add(grpAdmin);
+        
         pnlMenuContainer.add(Box.createVerticalGlue());
         
         JScrollPane scrollMenu = new JScrollPane(pnlMenuContainer);
@@ -157,7 +146,6 @@ public class FrmDashboard extends JFrame {
         scrollMenu.getVerticalScrollBar().setUnitIncrement(16);
         pnlSidebar.add(scrollMenu);
         
-        // El boton logout queda fijo al fondo
         JPanel pnlLogout = new JPanel(new BorderLayout());
         pnlLogout.setOpaque(false);
         pnlLogout.setBorder(new EmptyBorder(10, 0, 0, 0));
@@ -166,17 +154,12 @@ public class FrmDashboard extends JFrame {
 
         add(pnlSidebar, BorderLayout.WEST);
 
-        // ── Top Bar y JDesktopPane (CENTER) ────────────────────────
         JPanel pnlCenter = new JPanel(new BorderLayout());
-        
         pnlTopBar = new JPanel(new BorderLayout());
         pnlTopBar.setBackground(Color.WHITE);
-        pnlTopBar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, UIKit.BORDER),
-                new EmptyBorder(12, 24, 12, 24)
-        ));
+        pnlTopBar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIKit.BORDER), new EmptyBorder(12, 24, 12, 24)));
         
-        lblBreadcrumb = new JLabel("Inicio › Panel de Control ERP");
+        lblBreadcrumb = new JLabel("Inicio â€º Panel de Control ERP");
         lblBreadcrumb.setFont(UIKit.BODY_BOLD);
         lblBreadcrumb.setForeground(UIKit.TEXT_PRIMARY);
         pnlTopBar.add(lblBreadcrumb, BorderLayout.WEST);
@@ -186,7 +169,7 @@ public class FrmDashboard extends JFrame {
         
         JTextField txtSearchGlobal = UIKit.textField();
         txtSearchGlobal.setPreferredSize(new Dimension(200, 32));
-        txtSearchGlobal.putClientProperty("JTextField.placeholderText", "Buscar módulo...");
+        txtSearchGlobal.putClientProperty("JTextField.placeholderText", "Buscar mÃ³dulo...");
         pnlUserInfo.add(txtSearchGlobal);
         
         String nombreUsuario = Sesion.getUsuario() != null ? Sesion.getUsuario() : "Admin";
@@ -197,13 +180,10 @@ public class FrmDashboard extends JFrame {
         pnlUserInfo.add(lblUser);
         
         pnlTopBar.add(pnlUserInfo, BorderLayout.EAST);
-        
         pnlCenter.add(pnlTopBar, BorderLayout.NORTH);
         pnlCenter.add(desktopPane, BorderLayout.CENTER);
-        
         add(pnlCenter, BorderLayout.CENTER);
 
-        // Inicializar resumen dashboard de fondo
         initBgDashboard();
     }
 
@@ -212,13 +192,11 @@ public class FrmDashboard extends JFrame {
         grupo.setOpaque(false);
         grupo.setLayout(new BoxLayout(grupo, BoxLayout.Y_AXIS));
         grupo.setAlignmentX(Component.LEFT_ALIGNMENT);
-
         JLabel lblGrupo = new JLabel(titulo.toUpperCase());
         lblGrupo.setFont(UIKit.CAPTION);
         lblGrupo.setForeground(new Color(255, 255, 255, 130)); 
         lblGrupo.setBorder(new EmptyBorder(UIKit.SPACE_MD, UIKit.SPACE_MD, UIKit.SPACE_XS, UIKit.SPACE_MD));
         grupo.add(lblGrupo);
-
         for (JButton b : botones) {
             grupo.add(b);
             grupo.add(Box.createVerticalStrut(2));
@@ -235,51 +213,44 @@ public class FrmDashboard extends JFrame {
         pnlContent.setBackground(UIKit.BG_APP);
         pnlContent.setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        // Fila de Tarjetas KPI
         JPanel pnlCards = new JPanel(new GridLayout(1, 3, 20, 0));
         pnlCards.setOpaque(false);
         pnlCards.setPreferredSize(new Dimension(0, 100));
 
-        pnlCards.add(UIKit.kpiCard("VENTAS HOY", "S/ 1,245.50", "12 Transacciones", UIKit.ACCENT));
-        pnlCards.add(UIKit.kpiCard("VENTAS SEMANA", "S/ 8,720.00", "84 Transacciones", UIKit.SUCCESS));
-        pnlCards.add(UIKit.kpiCard("ALERTAS DE STOCK", "4 Productos", "Requieren reposición", UIKit.WARNING));
+        JPanel cardHoy = UIKit.kpiCard("VENTAS HOY", "S/ 0.00", "0 Transacciones", UIKit.ACCENT);
+        lblVentasHoy = (JLabel) cardHoy.getClientProperty("val");
+        lblSubVentasHoy = (JLabel) cardHoy.getClientProperty("sub");
+        
+        JPanel cardSemana = UIKit.kpiCard("VENTAS SEMANA", "S/ 0.00", "Semana en curso", UIKit.SUCCESS);
+        lblVentasSemana = (JLabel) cardSemana.getClientProperty("val");
+        lblSubVentasSemana = (JLabel) cardSemana.getClientProperty("sub");
+        
+        JPanel cardAlerta = UIKit.kpiCard("ALERTAS STOCK", "0 Productos", "Requieren reposicion", UIKit.WARNING);
+        lblAlertasStock = (JLabel) cardAlerta.getClientProperty("val");
+        lblSubAlertasStock = (JLabel) cardAlerta.getClientProperty("sub");
 
+        pnlCards.add(cardHoy);
+        pnlCards.add(cardSemana);
+        pnlCards.add(cardAlerta);
         pnlContent.add(pnlCards, BorderLayout.NORTH);
 
-        // Tablas inferiores (Alertas de Stock y Ventas Recientes)
         JPanel pnlTables = new JPanel(new GridLayout(1, 2, 20, 0));
         pnlTables.setOpaque(false);
 
-        // Panel de Alertas de Stock
         JPanel pnlAlerts = UIKit.card();
         pnlAlerts.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlAlerts.add(UIKit.sectionHeader("Alertas de Inventario Crítico", null), BorderLayout.NORTH);
-
-        String[] alertCols = {"Producto", "Stock Actual", "Mínimo"};
-        Object[][] alertData = {
-            {"Leche Gloria 1L", "5 unidades", "12 unidades"},
-            {"Arroz Costeño 5kg", "2 unidades", "10 unidades"},
-            {"Aceite Primor 1L", "3 unidades", "8 unidades"},
-            {"Fideos Don Vittorio", "4 unidades", "15 unidades"}
-        };
-        JTable tblAlerts = UIKit.styledTable(new DefaultTableModel(alertData, alertCols));
-        pnlAlerts.add(new JScrollPane(tblAlerts), BorderLayout.CENTER);
+        pnlAlerts.add(UIKit.sectionHeader("Alertas de Inventario Critico", null), BorderLayout.NORTH);
+        String[] alertCols = {"Producto", "Stock Actual", "Minimo"};
+        modelAlert = new DefaultTableModel(alertCols, 0) { public boolean isCellEditable(int r, int c) { return false; }};
+        pnlAlerts.add(new JScrollPane(UIKit.styledTable(modelAlert)), BorderLayout.CENTER);
         pnlTables.add(pnlAlerts);
 
-        // Panel de Ventas Recientes
         JPanel pnlRecentSales = UIKit.card();
         pnlRecentSales.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlRecentSales.add(UIKit.sectionHeader("Ventas Recientes", null), BorderLayout.NORTH);
-
-        String[] salesCols = {"Hora", "Cliente", "Total"};
-        Object[][] salesData = {
-            {"22:30", "Juan Perez", "S/ 45.00"},
-            {"22:15", "Maria Gomez", "S/ 120.50"},
-            {"21:50", "Carlos Lopez", "S/ 15.20"},
-            {"21:30", "Ana Torres", "S/ 89.90"}
-        };
-        JTable tblSales = UIKit.styledTable(new DefaultTableModel(salesData, salesCols));
-        pnlRecentSales.add(new JScrollPane(tblSales), BorderLayout.CENTER);
+        pnlRecentSales.add(UIKit.sectionHeader("Ventas Recientes (En Vivo)", null), BorderLayout.NORTH);
+        String[] salesCols = {"#", "Cliente", "Total", "Fecha"};
+        modelSales = new DefaultTableModel(salesCols, 0) { public boolean isCellEditable(int r, int c) { return false; }};
+        pnlRecentSales.add(new JScrollPane(UIKit.styledTable(modelSales)), BorderLayout.CENTER);
         pnlTables.add(pnlRecentSales);
 
         pnlContent.add(pnlTables, BorderLayout.CENTER);
@@ -294,6 +265,55 @@ public class FrmDashboard extends JFrame {
                 bgDashboardFrame.setBounds(0, 0, desktopPane.getWidth(), desktopPane.getHeight());
             }
         });
+        
+        updateBgDashboard(); // Carga inicial
+    }
+    
+    private void updateBgDashboard() {
+        if (!bgDashboardFrame.isVisible()) return; // Solo actualiza si esta viendose
+        
+        Modelo.VentaDAO ventaDAO = new Modelo.VentaDAO();
+        Modelo.ProductoDAO productoDAO = new Modelo.ProductoDAO();
+
+        Modelo.UsuarioDAO udao = new Modelo.UsuarioDAO();
+        for (Clases.Usuario u : udao.listarTodos()) {
+            if (u.getUsuario().equals(Sesion.getUsuario())) {
+                if (u.getSesionActiva() == 0) {
+                    if (refreshTimer != null) refreshTimer.stop();
+                    JOptionPane.showMessageDialog(this, "Su sesión ha sido iniciada en otro dispositivo.\nPor seguridad, la aplicación se cerrará.", "Sesión Finalizada", JOptionPane.ERROR_MESSAGE);
+                    System.exit(0);
+                }
+                break;
+            }
+        }
+
+        java.math.BigDecimal ventasHoy = ventaDAO.totalVentasHoy();
+        java.math.BigDecimal ventasSemana = ventaDAO.totalVentasSemana();
+        int txnHoy = ventaDAO.conteoVentasHoy();
+        int alertasStock = productoDAO.contarProductosStockBajo();
+
+        if(lblVentasHoy != null) lblVentasHoy.setText("S/ " + ventasHoy.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        if(lblSubVentasHoy != null) lblSubVentasHoy.setText(txnHoy > 0 ? txnHoy + " Transacciones" : "Sin ventas hoy");
+        if(lblVentasSemana != null) lblVentasSemana.setText("S/ " + ventasSemana.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        if(lblAlertasStock != null) lblAlertasStock.setText(alertasStock > 0 ? alertasStock + " Productos" : "Sin alertas");
+
+        java.util.List<Object[]> alertas = productoDAO.productosConStockBajo();
+        modelAlert.setRowCount(0);
+        if (alertas.isEmpty()) {
+            modelAlert.addRow(new Object[]{"Sin alertas de stock", "-", "-"});
+        } else {
+            for (Object[] a : alertas) { modelAlert.addRow(new Object[]{a[1], a[2], a[3]}); }
+        }
+
+        java.util.List<Object[]> ultimasVentas = ventaDAO.ultimasVentas(15);
+        modelSales.setRowCount(0);
+        if (ultimasVentas.isEmpty()) {
+            modelSales.addRow(new Object[]{"--", "Sin ventas registradas", "S/ 0.00", "-"});
+        } else {
+            for (Object[] u : ultimasVentas) {
+                modelSales.addRow(new Object[]{ u[0], u[1], "S/ " + ((java.math.BigDecimal)u[2]).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(), u[3] });
+            }
+        }
     }
 
     private JButton buildMenuButton(String text) {
@@ -318,65 +338,44 @@ public class FrmDashboard extends JFrame {
             }
             btnSeleccionado = btn;
             btnSeleccionado.setBackground(UIKit.PRIMARY_DARK);
-            btnSeleccionado.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(0, 3, 0, 0, UIKit.ACCENT),
-                    BorderFactory.createEmptyBorder(0, 13, 0, 16)
-            ));
+            btnSeleccionado.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, UIKit.ACCENT), BorderFactory.createEmptyBorder(0, 13, 0, 16)));
         });
 
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseEntered(java.awt.event.MouseEvent e) { 
-                if (btn != btnSeleccionado) btn.setBackground(UIKit.PRIMARY_DARK); 
-            }
-            @Override public void mouseExited(java.awt.event.MouseEvent e)  { 
-                if (btn != btnSeleccionado) btn.setBackground(UIKit.PRIMARY); 
-            }
+            public void mouseEntered(java.awt.event.MouseEvent e) { if (btn != btnSeleccionado) btn.setBackground(UIKit.PRIMARY_DARK); }
+            public void mouseExited(java.awt.event.MouseEvent e)  { if (btn != btnSeleccionado) btn.setBackground(UIKit.PRIMARY); }
         });
         return btn;
     }
 
     private void attachEvents() {
         btnPOS.addActionListener(e -> openFrame(new IFrmPuntoVenta(), "Punto de Venta"));
-        btnVentas.addActionListener(e -> openFrame(new GestionarVentas(), "Gestión de Ventas"));
         btnDevoluciones.addActionListener(e -> openFrame(new IFrmDevoluciones(), "Devoluciones"));
-        btnFidelizacion.addActionListener(e -> openFrame(new IFrmFidelizacion(), "Fidelización"));
-        
-        btnClientes.addActionListener(e -> openFrame(new IFrmGestionClientes(), "Gestión de Clientes"));
+        btnFidelizacion.addActionListener(e -> openFrame(new IFrmFidelizacion(), "FidelizaciÃ³n"));
+        btnClientes.addActionListener(e -> openFrame(new IFrmGestionClientes(), "GestiÃ³n de Clientes"));
         btnProveedores.addActionListener(e -> openFrame(new IFrmGestionProveedores(), "Proveedores"));
-        
-        btnCategorias.addActionListener(e -> openFrame(new IFrmGestionCategorias(), "Categorías"));
+        btnCategorias.addActionListener(e -> openFrame(new IFrmGestionCategorias(), "CategorÃ­as"));
         btnProductos.addActionListener(e -> openFrame(new IFrmGestionProductos(), "Productos"));
         btnKardex.addActionListener(e -> openFrame(new IFrmKardex(), "Kardex"));
         btnAlertasInventario.addActionListener(e -> openFrame(new IFrmAlertasInventario(), "Alertas de Inventario"));
         btnRepInventario.addActionListener(e -> openFrame(new IFrmReporteInventario(), "Reporte de Inventario"));
-        
         btnCompras.addActionListener(e -> openFrame(new IFrmRegistroCompras(), "Registro de Compras"));
-        
         btnFlujoCaja.addActionListener(e -> openFrame(new IFrmFlujoCaja(), "Flujo de Caja"));
         btnLibroMayor.addActionListener(e -> openFrame(new IFrmLibroMayor(), "Libro Mayor"));
         btnCuentasCP.addActionListener(e -> openFrame(new IFrmCuentasCobrarPagar(), "Cuentas Cobrar / Pagar"));
-        btnRepVentas.addActionListener(e -> openFrame(new IFrmReporteVentas(), "Reporte de Ventas"));
-        // FR-006 CA-5: solo Gerente/Admin — la restricción de visibilidad está en aplicarRol()
+        btnRepVentas.addActionListener(e -> openFrame(new IFrmReporteVentas(), "Historial de Ventas"));
         btnReportesAvanzados.addActionListener(e -> openFrame(new IFrmReportesAvanzados(), "Reportes Avanzados"));
-        
         btnEmpleados.addActionListener(e -> openFrame(new IFrmFichaEmpleados(), "Empleados"));
         btnPlanilla.addActionListener(e -> openFrame(new IFrmPlanillaAsistencia(), "Planilla y Asistencia"));
-        
         btnUsuarios.addActionListener(e -> openFrame(new IFrmGestionUsuarios(), "Usuarios"));
-        btnAuditoria.addActionListener(e -> openFrame(new IFrmBitacoraAuditoria(), "Auditoría"));
-        btnConfig.addActionListener(e -> openFrame(new IFrmConfiguracionERP(), "Configuración"));
+        btnAuditoria.addActionListener(e -> openFrame(new IFrmBitacoraAuditoria(), "AuditorÃ­a"));
+        btnConfig.addActionListener(e -> openFrame(new IFrmConfiguracionERP(), "ConfiguraciÃ³n"));
 
         btnLogout.addActionListener(e -> {
-            int op = JOptionPane.showConfirmDialog(this, "¿Cerrar sesión?", "Salir", JOptionPane.YES_NO_OPTION);
+            int op = JOptionPane.showConfirmDialog(this, "Â¿Cerrar sesiÃ³n?", "Salir", JOptionPane.YES_NO_OPTION);
             if (op == JOptionPane.YES_OPTION) {
-                // FR-020-v2 CA-1: registrar cierre de sesión manual
-                Utils.BitacoraService.registrar(
-                    Sesion.getUsuario(),
-                    Utils.BitacoraService.MOD_LOGIN,
-                    "LOGOUT",
-                    Utils.BitacoraService.OK,
-                    "Cierre de sesión manual"
-                );
+                new Modelo.UsuarioDAO().cambiarEstadoSesion(Sesion.getUsuario(), 0);
+                Utils.BitacoraService.registrar(Sesion.getUsuario(), Utils.BitacoraService.MOD_LOGIN, "LOGOUT", Utils.BitacoraService.OK, "Cierre de sesiÃ³n manual");
                 new FrmLogin().setVisible(true);
                 this.dispose();
             }
@@ -384,43 +383,35 @@ public class FrmDashboard extends JFrame {
     }
 
     private void openFrame(JInternalFrame iframe, String frameName) {
-        lblBreadcrumb.setText("Inicio › " + frameName);
+        lblBreadcrumb.setText("Inicio â€º " + frameName);
         for (JInternalFrame f : desktopPane.getAllFrames()) {
             if (f != bgDashboardFrame) {
                 f.dispose();
             }
         }
         
-        // Estandarizar la barra de título de la ventana interna
         iframe.putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
-        
         desktopPane.add(iframe);
         iframe.setVisible(true);
         try {
             iframe.setSelected(true);
-        } catch (java.beans.PropertyVetoException ex) {
-            ex.printStackTrace();
-        }
-        Dimension desktopSize = desktopPane.getSize();
-        Dimension jInternalFrameSize = iframe.getSize();
-        iframe.setLocation((desktopSize.width - jInternalFrameSize.width) / 2,
-                (desktopSize.height - jInternalFrameSize.height) / 2);
+            iframe.setMaximum(true);
+        } catch (java.beans.PropertyVetoException ex) {}
     }
 
     private void aplicarRol() {
         String rol = Sesion.getRol();
         if (rol != null && rol.equalsIgnoreCase("Vendedor")) {
-            btnUsuarios.setVisible(false);
-            btnAuditoria.setVisible(false);
-            btnRepVentas.setVisible(false);
-            btnRepInventario.setVisible(false);
-            btnConfig.setVisible(false);
-            btnCompras.setVisible(false);
-            btnEmpleados.setVisible(false);
-            btnPlanilla.setVisible(false);
+            // Ocultar modulos que no son de Vendedor para limpiar la vista
+            grpInventario.setVisible(false);
+            grpCompras.setVisible(false);
+            grpPersonal.setVisible(false);
+            grpAdmin.setVisible(false);
+            
+            // Ocultar funciones avanzadas de finanzas pero dejar Historial
             btnFlujoCaja.setVisible(false);
             btnLibroMayor.setVisible(false);
-            // FR-006 CA-5: Reportes Avanzados solo para Gerente/Administrador
+            btnCuentasCP.setVisible(false);
             btnReportesAvanzados.setVisible(false);
         }
     }
@@ -430,5 +421,13 @@ public class FrmDashboard extends JFrame {
         setMinimumSize(new Dimension(1024, 720));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                if (Sesion.getUsuario() != null) {
+                    new Modelo.UsuarioDAO().cambiarEstadoSesion(Sesion.getUsuario(), 0);
+                }
+            }
+        });
     }
 }

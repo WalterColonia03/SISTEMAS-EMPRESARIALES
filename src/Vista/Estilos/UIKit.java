@@ -6,11 +6,13 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 /**
- * Sistema de diseño centralizado del ERP Minimarket LAREDO.
- * Toda pantalla nueva o rediseñada debe construir su UI usando
- * estos tokens y fábricas — nunca colores/fuentes sueltos.
+ * Sistema de diseÃ±o centralizado del ERP Minimarket LAREDO.
+ * Toda pantalla nueva o rediseÃ±ada debe construir su UI usando
+ * estos tokens y fÃ¡bricas â€” nunca colores/fuentes sueltos.
  */
 public final class UIKit {
 
@@ -31,7 +33,7 @@ public final class UIKit {
     public static final Color DANGER          = new Color(0xD64550);
     public static final Color INFO            = ACCENT;
 
-    // ===================== TIPOGRAFÍA =====================
+    // ===================== TIPOGRAFÃ A =====================
     private static final String FAM = "Segoe UI";
     public static final Font H1        = new Font(FAM, Font.BOLD, 20);
     public static final Font H2        = new Font(FAM, Font.BOLD, 15);
@@ -110,13 +112,56 @@ public final class UIKit {
         return tf;
     }
 
-    /** Campo de solo lectura (reemplaza el patrón "JTextField deshabilitado gris" actual). */
+    /** Campo de solo lectura (reemplaza el patrÃ³n "JTextField deshabilitado gris" actual). */
     public static JTextField readOnlyField() {
-        JTextField tf = textField();
-        tf.setEditable(false);
-        tf.setBackground(BG_APP);
-        tf.setForeground(TEXT_SECONDARY);
-        return tf;
+        JTextField field = textField();
+        field.setEditable(false);
+        field.setBackground(BG_CARD);
+        field.setForeground(TEXT_SECONDARY);
+        return field;
+    }
+
+    // ===================== VALIDACIONES (NUEVO) =====================
+    public static void addNumericValidator(JTextField field, int maxLength) {
+        field.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                if (!Character.isDigit(e.getKeyChar()) && e.getKeyChar() != '.' && e.getKeyChar() != KeyEvent.VK_BACK_SPACE) {
+                    e.consume();
+                    Toolkit.getDefaultToolkit().beep();
+                } else if (field.getText().length() >= maxLength) {
+                    e.consume();
+                    Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        });
+    }
+
+    public static void addIntegerValidator(JTextField field, int maxLength) {
+        field.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                if (!Character.isDigit(e.getKeyChar()) && e.getKeyChar() != KeyEvent.VK_BACK_SPACE) {
+                    e.consume();
+                    Toolkit.getDefaultToolkit().beep();
+                } else if (field.getText().length() >= maxLength) {
+                    e.consume();
+                    Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        });
+    }
+
+    public static void addTextValidator(JTextField field, int maxLength) {
+        field.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                if (field.getText().length() >= maxLength) {
+                    e.consume();
+                    Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        });
     }
 
     // ===================== TARJETAS / SECCIONES =====================
@@ -130,7 +175,7 @@ public final class UIKit {
         return p;
     }
 
-    /** Encabezado estándar de una tarjeta de sección (título + opcional acción a la derecha). */
+    /** Encabezado estÃ¡ndar de una tarjeta de secciÃ³n (tÃ­tulo + opcional acciÃ³n a la derecha). */
     public static JPanel sectionHeader(String title, JComponent trailingAction) {
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
@@ -143,7 +188,7 @@ public final class UIKit {
         return header;
     }
 
-    /** Encabezado de pantalla: H1 + subtítulo/breadcrumb. */
+    /** Encabezado de pantalla: H1 + subtÃ­tulo/breadcrumb. */
     public static JPanel screenHeader(String titulo, String breadcrumb) {
         JPanel p = new JPanel();
         p.setOpaque(false);
@@ -219,6 +264,7 @@ public final class UIKit {
         table.setSelectionBackground(mezclarConBlanco(ACCENT, 0.88f));
         table.setSelectionForeground(TEXT_PRIMARY);
         table.setFillsViewportHeight(true);
+        table.setAutoCreateRowSorter(true);
 
         JTableHeader header = table.getTableHeader();
         header.setFont(LABEL);
@@ -226,6 +272,7 @@ public final class UIKit {
         header.setForeground(TEXT_SECONDARY);
         header.setPreferredSize(new Dimension(0, 38));
         header.setReorderingAllowed(false);
+        ((javax.swing.table.DefaultTableCellRenderer)header.getDefaultRenderer()).setHorizontalAlignment(SwingConstants.CENTER);
 
         // Zebra striping
         table.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {

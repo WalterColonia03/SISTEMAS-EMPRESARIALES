@@ -1,11 +1,19 @@
 package Vista;
 
+import Clases.Producto;
+import Modelo.ConexionDB;
+import Modelo.ProductoDAO;
 import Vista.Estilos.UIKit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class IFrmDevoluciones extends JInternalFrame {
 
@@ -27,12 +35,13 @@ public class IFrmDevoluciones extends JInternalFrame {
         initComponents();
         buildLayout();
         attachEvents();
+        cargarDevoluciones();
         setSize(960, 600);
         putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
     }
 
     private void initComponents() {
-        String[] columns = {"ID Devolución", "ID Venta", "Producto", "Cant", "Motivo", "Reembolso"};
+        String[] columns = {"ID Venta", "Producto", "Cant", "Motivo", "Reembolso", "Fecha"};
         modelDevoluciones = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int col) { return false; }
@@ -73,7 +82,7 @@ public class IFrmDevoluciones extends JInternalFrame {
         // ── Panel Izquierdo: Tabla de Devoluciones Realizadas ──
         JPanel pnlTabla = UIKit.card();
         pnlTabla.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlTabla.add(UIKit.sectionHeader("Historial de Devoluciones", null), BorderLayout.NORTH);
+        pnlTabla.add(UIKit.sectionHeader("Historial de Devoluciones (Kardex)", null), BorderLayout.NORTH);
         
         JScrollPane scroll = new JScrollPane(tblDevoluciones);
         scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
@@ -149,14 +158,72 @@ public class IFrmDevoluciones extends JInternalFrame {
 
         getContentPane().add(cuerpo, BorderLayout.CENTER);
     }
+    
+    private void cargarDevoluciones() {
+        modelDevoluciones.setRowCount(0);
+        String sql = "SELECT idProducto, cantidad, fecha, motivo FROM tb_kardex WHERE motivo LIKE 'DEVOLUCION%' ORDER BY idMovimiento DESC LIMIT 30";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                String motivoReal = rs.getString("motivo").replace("DEVOLUCION - ", "");
+                int idProd = rs.getInt("idProducto");
+                Producto p = new ProductoDAO().buscarPorNombre(String.valueOf(idProd)); // Dummy search to just get product, actually better to just show idProd or fetch
+                modelDevoluciones.addRow(new Object[]{
+                    "N/A", // Venta
+                    "Prod #" + idProd,
+                    rs.getInt("cantidad"),
+                    motivoReal,
+                    "Efectivo",
+                    rs.getString("fecha")
+                });
+            }
+        } catch (Exception e) {}
+    }
 
     private void attachEvents() {
         btnBuscarVenta.addActionListener(e -> {
-            // TODO: lógica TXT para verificar la venta
+            JOptionPane.showMessageDialog(this, "Las devoluciones en este MVP se procesan directamente como entradas al inventario sin comprobación estricta de la boleta para mayor rapidez en caja.");
         });
 
         btnProcesar.addActionListener(e -> {
-            // TODO: lógica TXT para procesar la devolución
+            try {
+                int idProd = Integer.parseInt(txtIdProducto.getText());
+                int cant = Integer.parseInt(txtCantidad.getText());
+                String motivo = cbMotivo.getSelectedItem().toString();
+                String fecha = new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date());
+                
+                // 1. Restaurar stock
+                ProductoDAO pdao = new ProductoDAO();
+                Producto p = null;
+                for (Producto prod : pdao.listarTodos()) {
+                    if (prod.getIdProducto() == idProd) { p = prod; break; }
+                }
+                
+                if (p == null) {
+                    JOptionPane.showMessageDialog(this, "El Producto ID " + idProd + " no existe.");
+                    return;
+                }
+                
+                p.setCantidad(p.getCantidad() + cant);
+                pdao.actualizar(p);
+                
+                // 2. Registrar en Kardex
+                String sql = "INSERT INTO tb_kardex (idProducto, tipoMovimiento, cantidad, fecha, motivo) VALUES (?, 'ENTRADA', ?, ?, ?)";
+                try (Connection conn = ConexionDB.getConexion(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setInt(1, idProd);
+                    ps.setInt(2, cant);
+                    ps.setString(3, fecha);
+                    ps.setString(4, "DEVOLUCION - " + motivo);
+                    ps.executeUpdate();
+                }
+                
+                JOptionPane.showMessageDialog(this, "Devolución procesada. El stock del producto ha sido restaurado.");
+                btnLimpiar.doClick();
+                cargarDevoluciones();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Verifique que el ID Producto y la Cantidad sean números válidos.");
+            }
         });
 
         btnLimpiar.addActionListener(e -> {

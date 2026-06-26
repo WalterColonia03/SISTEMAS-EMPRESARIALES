@@ -78,4 +78,26 @@ Si eres un agente de IA leyendo esto para empezar a programar, ejecuta estas dir
 3. **Fase de Autocrítica (Ciclo de Reflexión):** Antes de entregar tu respuesta con el código, ejecuta internamente una verificación: *¿Este código viola algún principio de Clean Code? ¿Cumple con los patrones de diseño del Gang of Four adecuados para este caso? ¿Previene condiciones de carrera en el stock?*
 
 ---
+
+##5. GUIA DE COMO DEBES DE REDACTAR LA PLANIFICACION SIGUIENDO A LOS AUTORES DE ESTOS LIBROS.
+
+Dick, Hull and Jackson (2017) Ingeniería de Requerimientos.pdf
+
+George Koelsch - Requirements Writing for System Engineering (2016)
+
+ISO-IEC-IEEE 29148-2018 Ingeniería de Requisitos.pdf
+
+Kenneth Kendall y Julie Kendall- Analisis y Diseno de Sistemas -8va ed (2011)
+
+Phillip Laplante (2018) Requirements Engineering for Software and Systems.pdf
+
+Sommerville, Ian (2016) Software Engineering (10th inglés).pdf
+
+SWEBOK v4 - 2024 (Inglés)
+
+Wiegers and Beatty- Requisitos de software (2013)
+
+
+
+---
 *Este documento es ley en el repositorio. Al procesar solicitudes subsecuentes, actúa bajo el rol de un Ingeniero de Software Principal altamente experimentado, pragmático y riguroso.*

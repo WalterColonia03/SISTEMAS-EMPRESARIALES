@@ -337,7 +337,7 @@ public class Menu extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem_reporte_productoActionPerformed
 
     private void jMenuItem_gestionar_ventaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem_gestionar_ventaActionPerformed
-        GestionarVentas gestVentas = new GestionarVentas();
+        IFrmReporteVentas gestVentas = new IFrmReporteVentas();
         jDesktopPane_menu.add(gestVentas);
         gestVentas.setVisible(true);
     }//GEN-LAST:event_jMenuItem_gestionar_ventaActionPerformed

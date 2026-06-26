@@ -2,19 +2,22 @@ package Vista;
 
 import Clases.LibroMayor;
 import Modelo.LibroMayorDAO;
+import com.toedter.calendar.JDateChooser;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class IFrmLibroMayor extends JInternalFrame {
 
     private JComboBox<String> cbCuentaContable;
-    private JTextField txtFechaInicio;
-    private JTextField txtFechaFin;
+    private JDateChooser txtFechaInicio;
+    private JDateChooser txtFechaFin;
     private JButton btnFiltrar;
     private JButton btnRefrescar;
 
@@ -30,18 +33,19 @@ public class IFrmLibroMayor extends JInternalFrame {
     private static final Color COLOR_ACCENT = new Color(46, 125, 50);
 
     public IFrmLibroMayor() {
-        super("Libro Mayor - Visualizaci\u00f3n de Asientos Contables", true, true, true, true);
+        super("Libro Mayor - Visualización de Asientos Contables", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
         setSize(1000, 620);
+        putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
     }
 
     private void initComponents() {
         cbCuentaContable = new JComboBox<>(new String[]{
             "Todas las Cuentas",
             "Efectivo y Equivalentes (101)",
-            "Mercader\u00edas (201)",
+            "Mercaderías (201)",
             "Cuentas por Cobrar (121)",
             "Cuentas por Pagar (421)",
             "Capital (501)",
@@ -50,8 +54,14 @@ public class IFrmLibroMayor extends JInternalFrame {
             "Gastos Administrativos (941)",
             "IGV por Pagar (4011)"
         });
-        txtFechaInicio = new JTextField(10);
-        txtFechaFin = new JTextField(10);
+        txtFechaInicio = new JDateChooser();
+        txtFechaInicio.setDateFormatString("dd/MM/yyyy");
+        txtFechaInicio.setPreferredSize(new Dimension(130, 26));
+
+        txtFechaFin = new JDateChooser();
+        txtFechaFin.setDateFormatString("dd/MM/yyyy");
+        txtFechaFin.setPreferredSize(new Dimension(130, 26));
+
         btnFiltrar = new JButton("Filtrar");
         btnFiltrar.setBackground(COLOR_PRIMARY);
         btnFiltrar.setForeground(Color.WHITE);
@@ -76,11 +86,6 @@ public class IFrmLibroMayor extends JInternalFrame {
         lblSaldoActual = new JLabel("S/ 0.00");
         lblSaldoActual.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblSaldoActual.setForeground(COLOR_PRIMARY);
-
-        // Datos de ejemplo removidos, se cargarán desde la BD en attachEvents()
-        lblDebeTotal.setText("S/ 0.00");
-        lblHaberTotal.setText("S/ 0.00");
-        lblSaldoActual.setText("S/ 0.00");
     }
 
     private void buildLayout() {
@@ -103,13 +108,6 @@ public class IFrmLibroMayor extends JInternalFrame {
 
         JPanel pnlTabla = new JPanel(new BorderLayout(5, 5));
         pnlTabla.setBorder(BorderFactory.createTitledBorder("Asientos Contables"));
-
-        JPanel pnlAyuda = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel lblAyuda = new JLabel("Seleccione una cuenta para ver sus movimientos individuales o \"Todas\" para ver el libro completo.");
-        lblAyuda.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        lblAyuda.setForeground(new Color(117, 117, 117));
-        pnlAyuda.add(lblAyuda);
-        pnlTabla.add(pnlAyuda, BorderLayout.NORTH);
         pnlTabla.add(new JScrollPane(tblAsientos), BorderLayout.CENTER);
         pnlCentral.add(pnlTabla, BorderLayout.CENTER);
 
@@ -127,27 +125,21 @@ public class IFrmLibroMayor extends JInternalFrame {
         pnlResumen.add(lblSaldoAnterior, gbc);
 
         gbc.gridy = 2;
-        gbc.insets = new Insets(15, 10, 5, 10);
         pnlResumen.add(new JLabel("Total Debe (Entradas):"), gbc);
         gbc.gridy = 3;
-        gbc.insets = new Insets(0, 10, 5, 10);
         pnlResumen.add(lblDebeTotal, gbc);
 
         gbc.gridy = 4;
-        gbc.insets = new Insets(5, 10, 5, 10);
         pnlResumen.add(new JLabel("Total Haber (Salidas):"), gbc);
         gbc.gridy = 5;
-        gbc.insets = new Insets(0, 10, 5, 10);
         pnlResumen.add(lblHaberTotal, gbc);
 
         JSeparator sep = new JSeparator();
         sep.setPreferredSize(new Dimension(0, 10));
         gbc.gridy = 6;
-        gbc.insets = new Insets(10, 10, 5, 10);
         pnlResumen.add(sep, gbc);
 
         gbc.gridy = 7;
-        gbc.insets = new Insets(5, 10, 10, 10);
         pnlResumen.add(new JLabel("Saldo Actual:"), gbc);
         gbc.gridy = 8;
         pnlResumen.add(lblSaldoActual, gbc);
@@ -157,65 +149,60 @@ public class IFrmLibroMayor extends JInternalFrame {
     }
 
     private void attachEvents() {
-        // Carga inicial
         cargarDatos();
-
-        btnFiltrar.addActionListener(e -> {
-            cargarDatos();
-        });
-
+        btnFiltrar.addActionListener(e -> cargarDatos());
         btnRefrescar.addActionListener(e -> {
-            txtFechaInicio.setText("");
-            txtFechaFin.setText("");
+            txtFechaInicio.setDate(null);
+            txtFechaFin.setDate(null);
             cbCuentaContable.setSelectedIndex(0);
             cargarDatos();
-            JOptionPane.showMessageDialog(this, "Libro mayor actualizado desde la base de datos.");
+            JOptionPane.showMessageDialog(this, "Libro mayor actualizado.");
+        });
+        this.addInternalFrameListener(new javax.swing.event.InternalFrameAdapter() {
+            @Override public void internalFrameActivated(javax.swing.event.InternalFrameEvent e) { cargarDatos(); }
         });
     }
 
-    /**
-     * Carga y filtra los datos del Libro Mayor usando LibroMayorDAO
-     * Modificado: 2026-06-25T23:15:00-05:00
-     */
     private void cargarDatos() {
         LibroMayorDAO dao = new LibroMayorDAO();
         List<LibroMayor> lista = dao.listarTodos();
 
         String cuentaSel = cbCuentaContable.getSelectedItem().toString();
-        String fechaIni = txtFechaInicio.getText().trim();
-        String fechaFin = txtFechaFin.getText().trim();
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+        String fIni = txtFechaInicio.getDate() != null ? sdf.format(txtFechaInicio.getDate()) : "";
+        String fFin = txtFechaFin.getDate() != null ? sdf.format(txtFechaFin.getDate()) : "";
 
-        // Limpiar tabla
         modelAsientos.setRowCount(0);
-        // CORRECCIÓN: acumuladores BigDecimal (2026-06-26 — Auditoría ERP)
         java.math.BigDecimal totalDebe  = java.math.BigDecimal.ZERO;
         java.math.BigDecimal totalHaber = java.math.BigDecimal.ZERO;
 
         for (LibroMayor lm : lista) {
             boolean pasaFiltro = true;
 
-            // Filtro por cuenta contable
             if (cbCuentaContable.getSelectedIndex() > 0) {
-                // Si seleccionó una cuenta específica, extraemos el código (ej. "Efectivo (101)" -> "101")
-                // Por simplicidad, chequearemos si cuentaDebe o cuentaHaber contiene la selección
                 if (!lm.getCuentaDebe().contains(cuentaSel) && !lm.getCuentaHaber().contains(cuentaSel)) {
                     pasaFiltro = false;
                 }
             }
 
-            // Filtro por fecha (simple coincidencia por ahora)
-            if (!fechaIni.isEmpty() && lm.getFecha().compareTo(fechaIni) < 0) pasaFiltro = false;
-            if (!fechaFin.isEmpty() && lm.getFecha().compareTo(fechaFin) > 0) pasaFiltro = false;
+            try {
+                if (!fIni.isEmpty() && !fFin.isEmpty()) {
+                    String fv = lm.getFecha();
+                    Date dIni = sdf.parse(fIni);
+                    Date dFin = sdf.parse(fFin);
+                    Date dVenta = sdf.parse(fv.length() >= 10 ? fv.substring(0, 10) : fv);
+                    if (dVenta.before(dIni) || dVenta.after(dFin)) {
+                        pasaFiltro = false;
+                    }
+                }
+            } catch(Exception e) {}
 
             if (pasaFiltro) {
                 java.math.BigDecimal debe  = lm.getMontoDebe()  != null ? lm.getMontoDebe()  : java.math.BigDecimal.ZERO;
                 java.math.BigDecimal haber = lm.getMontoHaber() != null ? lm.getMontoHaber() : java.math.BigDecimal.ZERO;
                 modelAsientos.addRow(new Object[]{
-                    lm.getFecha(),
-                    lm.getGlosa(),
-                    lm.getCuentaDebe(),
-                    lm.getCuentaHaber(),
-                    // CORRECCIÓN: toPlainString() para BigDecimal
+                    lm.getFecha(), lm.getGlosa(), lm.getCuentaDebe(), lm.getCuentaHaber(),
                     debe.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
                     haber.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
                     lm.getNroAsiento()

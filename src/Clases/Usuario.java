@@ -9,6 +9,7 @@ public class Usuario {
     private String password;
     private String rol;
     private int estado;
+    private int sesionActiva;
 
     public Usuario(int idUsuario, String nombre, String apellido, String usuario, String password, String telefono, String rol, int estado) {
 
@@ -49,6 +50,9 @@ public class Usuario {
     public String getRol() {   
         return rol;
     }
+
+    public int getSesionActiva() { return sesionActiva; }
+    public void setSesionActiva(int sesionActiva) { this.sesionActiva = sesionActiva; }
 
     public int getEstado() {
         return estado;
