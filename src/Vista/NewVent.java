@@ -3,9 +3,9 @@ package Vista;
 import Clases.Cliente;
 import Clases.Producto;
 import Clases.Venta;
-import ArchivosTXT.ArchivoClienteTXT;
-import ArchivosTXT.ArchivoProductoTXT;
-import ArchivosTXT.ArchivoVentaTXT;
+import Modelo.ClienteDAO;
+import Modelo.ProductoDAO;
+import Modelo.VentaDAO;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
@@ -328,8 +328,8 @@ public class NewVent extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoClienteTXT archivo = new ArchivoClienteTXT();
-        List<Cliente> lista = archivo.leer();
+        ClienteDAO dao = new ClienteDAO();
+        List<Cliente> lista = dao.listarTodos();
 
         boolean encontrado = false;
 
@@ -373,15 +373,26 @@ public class NewVent extends javax.swing.JInternalFrame {
             return;
         }
 
-        if (txt_cantidad_Elegida.getText().trim().isEmpty()) {
+        String cantidadTexto = txt_cantidad_Elegida.getText().trim();
+        if (cantidadTexto.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Ingrese una cantidad");
             return;
         }
 
-        int cantidadElegida = Integer.parseInt(txt_cantidad_Elegida.getText());
+        int cantidadElegida = 0;
+        try {
+            cantidadElegida = Integer.parseInt(cantidadTexto);
+            if (cantidadElegida <= 0) {
+                JOptionPane.showMessageDialog(this, "La cantidad debe ser mayor a 0");
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Ingrese un número entero positivo");
+            return;
+        }
 
-        ArchivoProductoTXT archivo = new ArchivoProductoTXT();
-        List<Producto> lista = archivo.leer();
+        ProductoDAO dao = new ProductoDAO();
+        List<Producto> lista = dao.listarTodos();
 
         Producto productoEncontrado = null;
 
@@ -402,15 +413,15 @@ public class NewVent extends javax.swing.JInternalFrame {
 
         // VALIDAR STOCK
         if (cantidadElegida > productoEncontrado.getCantidad()) {
-
-            JOptionPane.showMessageDialog(this, "Stock insuficiente\nStock disponible: " + productoEncontrado.getCantidad());
+            JOptionPane.showMessageDialog(this, "Stock insuficiente: hay " + productoEncontrado.getCantidad() + " unidades disponibles");
             return;
         }
 
-        double precio = productoEncontrado.getPrecio();
-        double subtotal = cantidadElegida * precio;
-        double descuento = 0;
-        double total = subtotal - descuento;
+        // CORRECCIÓN: BigDecimal para precio y subtotal (2026-06-26 — Auditoría ERP)
+        java.math.BigDecimal precio = productoEncontrado.getPrecio();
+        java.math.BigDecimal subtotal = precio.multiply(new java.math.BigDecimal(cantidadElegida));
+        java.math.BigDecimal descuento = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal total = subtotal.subtract(descuento);
 
         DefaultTableModel modelo = (DefaultTableModel) jTable_Venta.getModel();
 
@@ -420,10 +431,10 @@ public class NewVent extends javax.swing.JInternalFrame {
             numero,
             productoEncontrado.getNombre(),
             cantidadElegida,
-            String.format("%.2f", precio),
-            String.format("%.2f", subtotal),
-            String.format("%.2f", descuento),
-            String.format("%.2f", total),
+            precio.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
+            subtotal.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
+            descuento.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
+            total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
             "Eliminar"
         };
 
@@ -478,62 +489,43 @@ public class NewVent extends javax.swing.JInternalFrame {
                 return;
             }
 
-            // Guarda la vente en el txt
-            ArchivoVentaTXT archivoVenta = new ArchivoVentaTXT();
-
-            // Genera el id del cliente automaticamente
-            int idVenta = archivoVenta.leer().size() + 1;
+            VentaDAO ventaDAO = new VentaDAO();
+            int idVenta = ventaDAO.listarTodos().size() + 1;
 
             // 
             String cliente = jComboBox_Clientes.getSelectedItem().toString();
 
-            // TOTAL
-            double totalVenta = Double.parseDouble(jTextField_TotalPagar.getText());
+            // CORRECCIÓN: totalVenta como BigDecimal para el constructor de Venta
+            java.math.BigDecimal totalVenta = new java.math.BigDecimal(
+                    jTextField_TotalPagar.getText().replace(",", "."));
 
             // FECHA
-            String fecha = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String fecha = java.time.LocalDate.now().format(
+                    java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
-            // CREAR OBJETO
+            // CREAR OBJETO VENTA
             Venta venta = new Venta(idVenta, cliente, totalVenta, fecha);
 
-            // GUARDAR EN TXT
-            archivoVenta.guardar(venta);
+            ventaDAO.guardar(venta);
 
-            // ACTUALIZAR STOCK
-            ArchivoProductoTXT archivoProducto
-                    = new ArchivoProductoTXT();
+            ProductoDAO productoDAO = new ProductoDAO();
+            List<Producto> listaProductos = productoDAO.listarTodos();
 
-            List<Producto> listaProductos
-                    = archivoProducto.leer();
-
-            DefaultTableModel modelo
-                    = (DefaultTableModel) jTable_Venta.getModel();
+            DefaultTableModel modelo = (DefaultTableModel) jTable_Venta.getModel();
 
             for (int i = 0; i < modelo.getRowCount(); i++) {
-
-                String nombreProducto
-                        = modelo.getValueAt(i, 1).toString();
-
-                int cantidadVendida
-                        = Integer.parseInt(
-                                modelo.getValueAt(i, 2).toString());
+                String nombreProducto = modelo.getValueAt(i, 1).toString();
+                int cantidadVendida = Integer.parseInt(modelo.getValueAt(i, 2).toString());
 
                 for (Producto p : listaProductos) {
-
                     if (p.getNombre().equals(nombreProducto)) {
-
-                        int nuevoStock
-                                = p.getCantidad() - cantidadVendida;
-
+                        int nuevoStock = p.getCantidad() - cantidadVendida;
                         p.setCantidad(nuevoStock);
-
+                        productoDAO.actualizar(p);
                         break;
                     }
                 }
             }
-
-            // GUARDAR CAMBIOS
-            archivoProducto.guardarLista(listaProductos);
 
             Document documento = new Document();
 
@@ -756,8 +748,8 @@ public class NewVent extends javax.swing.JInternalFrame {
 
     public void cargarClientes() {
 
-        ArchivoClienteTXT archivo = new ArchivoClienteTXT();
-        List<Cliente> lista = archivo.leer();
+        ClienteDAO dao = new ClienteDAO();
+        List<Cliente> lista = dao.listarTodos();
 
         jComboBox_Clientes.removeAllItems();
 
@@ -773,8 +765,8 @@ public class NewVent extends javax.swing.JInternalFrame {
 
     public void cargarProductos() {
 
-        ArchivoProductoTXT archivo = new ArchivoProductoTXT();
-        List<Producto> lista = archivo.leer();
+        ProductoDAO dao = new ProductoDAO();
+        List<Producto> lista = dao.listarTodos();
 
         jComboBox_Productos.removeAllItems();
 

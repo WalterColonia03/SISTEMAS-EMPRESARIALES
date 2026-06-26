@@ -1,66 +1,55 @@
 package Vista;
 
+import Clases.Bitacora;
+import Modelo.BitacoraDAO;
 import Vista.Estilos.UIKit;
-import com.formdev.flatlaf.FlatClientProperties;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 /**
- * IFrmBitacoraAuditoria - Bitácora de Auditoría.
- * Rediseñado con UIKit (Patrón D).
+ * Vista de Bitácora de Auditoría — solo lectura (CA-4: sin botón Editar/Eliminar).
+ *
+ * Historia de Usuario: FR-020-v2 · CA-1 a CA-6
+ *
+ * Creado: 2026-06-25T23:50:00-05:00
+ * Modificado: 2026-06-26T02:17:00-05:00 — getFechaHora() → getTimestamp(), +filtro usuario, +resultado
  */
 public class IFrmBitacoraAuditoria extends JInternalFrame {
 
-    private JTable tblAuditoria;
-    private DefaultTableModel modelAuditoria;
-
-    // Filtros
-    private JTextField txtFechaInicio;
-    private JTextField txtFechaFin;
-    private JComboBox<String> cbUsuario;
-    private JComboBox<String> cbAccion;
-
-    private JButton btnFiltrar;
-    private JButton btnLimpiar;
-    private JButton btnExportar;
+    private JTable              tblBitacora;
+    private DefaultTableModel   modelBitacora;
+    private JButton             btnActualizar;
+    private JButton             btnBuscar;
+    private JTextField          txtFiltroUsuario;
+    private JComboBox<String>   cbFiltroResultado;
 
     public IFrmBitacoraAuditoria() {
         super("Bitácora de Auditoría", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
-        setSize(960, 600);
-        putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
+        setSize(1060, 620);
     }
 
     private void initComponents() {
-        // Filtros
-        txtFechaInicio = UIKit.textField();
-        txtFechaInicio.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "DD/MM/AAAA");
-        
-        txtFechaFin = UIKit.textField();
-        txtFechaFin.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "DD/MM/AAAA");
-        
-        cbUsuario = new JComboBox<>(new String[]{"Todos", "ADMIN", "user1", "superadmin"});
-        cbUsuario.setFont(UIKit.BODY);
-        
-        cbAccion = new JComboBox<>(new String[]{"Todos", "Inicio Sesión", "Creación de Cliente", "Registro Venta", "Actualización Stock", "Devolución"});
-        cbAccion.setFont(UIKit.BODY);
-
-        btnFiltrar = UIKit.primaryButton("Filtrar");
-        btnLimpiar = UIKit.secondaryButton("Restablecer");
-        btnExportar = UIKit.secondaryButton("Exportar Auditoría");
-
-        // Tabla de auditoría
-        String[] columns = {"Fecha y Hora", "Usuario", "Módulo", "Acción Realizada", "Detalles", "IP/Equipo"};
-        modelAuditoria = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) { return false; }
+        // CA-3: columna Resultado visible para detectar anomalías
+        String[] columns = {"ID", "Usuario", "Módulo", "Acción", "Resultado", "Detalle", "Timestamp"};
+        modelBitacora = new DefaultTableModel(columns, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
         };
-        tblAuditoria = UIKit.styledTable(modelAuditoria);
+        tblBitacora = UIKit.styledTable(modelBitacora);
+
+        btnActualizar     = UIKit.primaryButton("↻ Actualizar");
+        btnBuscar         = UIKit.secondaryButton("Buscar");
+        txtFiltroUsuario  = UIKit.textField();                  // CORRECCIÓN: era styledTextField (no existe)
+        txtFiltroUsuario.setToolTipText("Filtrar por usuario...");
+        cbFiltroResultado = new JComboBox<>(new String[]{"Todos", "EXITO", "FALLO"});
+        cbFiltroResultado.setFont(UIKit.BODY);                  // CORRECCIÓN: era FONT_BODY
+        cbFiltroResultado.setBackground(UIKit.BG_CARD);         // CORRECCIÓN: era SURFACE
     }
 
     private void buildLayout() {
@@ -69,102 +58,67 @@ public class IFrmBitacoraAuditoria extends JInternalFrame {
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(
                 UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
 
-        // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Bitácora de Auditoría", "Administración  ›  Auditoría"),
+                UIKit.screenHeader("Bitácora de Auditoría", "Seguridad  ›  Bitácora"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
         cuerpo.setOpaque(false);
 
-        // ── Panel Superior: Filtros de Búsqueda ──
+        // Panel de filtros (CA-3: filtro por usuario y resultado)
         JPanel pnlFiltros = UIKit.card();
-        pnlFiltros.setLayout(new GridBagLayout());
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.gridwidth = 4;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlFiltros.add(UIKit.sectionHeader("Filtros de Búsqueda", null), gbc);
-
-        gbc.gridwidth = 1;
-        gbc.gridy = 1;
-        
-        gbc.gridx = 0;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, UIKit.SPACE_SM);
-        pnlFiltros.add(UIKit.fieldLabel("Fecha Inicio"), gbc);
-        
-        gbc.gridx = 1;
-        pnlFiltros.add(UIKit.fieldLabel("Fecha Fin"), gbc);
-        
-        gbc.gridx = 2;
-        pnlFiltros.add(UIKit.fieldLabel("Usuario"), gbc);
-        
-        gbc.gridx = 3;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlFiltros.add(UIKit.fieldLabel("Acción"), gbc);
-
-        gbc.gridy = 2;
-        gbc.gridx = 0;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, UIKit.SPACE_SM);
-        pnlFiltros.add(txtFechaInicio, gbc);
-        
-        gbc.gridx = 1;
-        pnlFiltros.add(txtFechaFin, gbc);
-        
-        gbc.gridx = 2;
-        pnlFiltros.add(cbUsuario, gbc);
-        
-        gbc.gridx = 3;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlFiltros.add(cbAccion, gbc);
-
-        // Panel de botones de filtros
-        JPanel pnlBotonesFiltro = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIKit.SPACE_SM, 0));
-        pnlBotonesFiltro.setOpaque(false);
-        pnlBotonesFiltro.add(btnLimpiar);
-        pnlBotonesFiltro.add(btnFiltrar);
-
-        gbc.gridy = 3;
-        gbc.gridx = 0;
-        gbc.gridwidth = 4;
-        gbc.insets = new Insets(0, 0, 0, 0);
-        pnlFiltros.add(pnlBotonesFiltro, gbc);
-        
+        pnlFiltros.setLayout(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_SM, UIKit.SPACE_SM));
+        pnlFiltros.add(new JLabel("Usuario:"));
+        pnlFiltros.add(txtFiltroUsuario);
+        pnlFiltros.add(new JLabel("Resultado:"));
+        pnlFiltros.add(cbFiltroResultado);
+        pnlFiltros.add(btnBuscar);
+        pnlFiltros.add(btnActualizar);
         cuerpo.add(pnlFiltros, BorderLayout.NORTH);
 
-        // ── Panel Central: Tabla ──
-        JPanel pnlCentral = UIKit.card();
-        pnlCentral.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlCentral.add(UIKit.sectionHeader("Registros de Auditoría", btnExportar), BorderLayout.NORTH);
-        
-        JScrollPane scroll = new JScrollPane(tblAuditoria);
-        scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
-        pnlCentral.add(scroll, BorderLayout.CENTER);
-
-        cuerpo.add(pnlCentral, BorderLayout.CENTER);
+        // Tabla — CA-4: sin botones de edición
+        JPanel pnlTabla = UIKit.card();
+        pnlTabla.setLayout(new BorderLayout());
+        JScrollPane scroll = new JScrollPane(tblBitacora);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        pnlTabla.add(scroll, BorderLayout.CENTER);
+        cuerpo.add(pnlTabla, BorderLayout.CENTER);
 
         getContentPane().add(cuerpo, BorderLayout.CENTER);
     }
 
     private void attachEvents() {
-        btnFiltrar.addActionListener(e -> {
-            // TODO: lógica TXT para leer logs de auditoria y cargarlos en la tabla según filtros
+        btnActualizar.addActionListener(e -> cargarDatos(null, null));
+        btnBuscar.addActionListener(e -> {
+            String usuario = txtFiltroUsuario.getText().trim();
+            String resultado = cbFiltroResultado.getSelectedIndex() == 0
+                    ? null : cbFiltroResultado.getSelectedItem().toString();
+            cargarDatos(usuario.isEmpty() ? null : usuario, resultado);
         });
+        cargarDatos(null, null);
+    }
 
-        btnLimpiar.addActionListener(e -> {
-            txtFechaInicio.setText("");
-            txtFechaFin.setText("");
-            cbUsuario.setSelectedIndex(0);
-            cbAccion.setSelectedIndex(0);
-        });
+    private void cargarDatos(String filtroUsuario, String filtroResultado) {
+        BitacoraDAO dao = new BitacoraDAO();
+        List<Bitacora> lista;
 
-        btnExportar.addActionListener(e -> {
-            // TODO: lógica TXT para guardar los registros de auditoría filtrados en un reporte de texto
-            JOptionPane.showMessageDialog(this, "Bitácora exportada correctamente a la carpeta del proyecto");
-        });
+        if (filtroUsuario != null && !filtroUsuario.isEmpty()) {
+            lista = dao.listarPorUsuario(filtroUsuario);
+        } else {
+            lista = dao.listarPorFiltros(null, filtroResultado);
+        }
+
+        modelBitacora.setRowCount(0);
+        for (Bitacora b : lista) {
+            modelBitacora.addRow(new Object[]{
+                b.getIdBitacora(),
+                b.getUsuario(),
+                b.getModulo(),
+                b.getAccion(),
+                b.getResultado(),   // CORRECCIÓN: era b.getFechaHora() (método inexistente)
+                b.getDetalle(),
+                b.getTimestamp()    // CORRECCIÓN: era b.getFechaHora()
+            });
+        }
     }
 }

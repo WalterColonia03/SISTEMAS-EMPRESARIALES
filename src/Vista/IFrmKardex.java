@@ -1,9 +1,15 @@
 package Vista;
 
+import Clases.Kardex;
+import Clases.Producto;
+import Modelo.KardexDAO;
+import Modelo.ProductoDAO;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class IFrmKardex extends JInternalFrame {
 
@@ -28,7 +34,12 @@ public class IFrmKardex extends JInternalFrame {
     }
 
     private void initComponents() {
-        cbProducto = new JComboBox<>(new String[]{"Seleccione un producto", "Leche Gloria 1L", "Arroz Coste\u00f1o 5kg", "Aceite Primor 1L"});
+        cbProducto = new JComboBox<>();
+        cbProducto.addItem("Seleccione un producto");
+        ProductoDAO pdao = new ProductoDAO();
+        for (Producto p : pdao.listarTodos()) {
+            cbProducto.addItem(p.getIdProducto() + " - " + p.getNombre());
+        }
         btnRefrescar = new JButton("Refrescar");
         btnRefrescar.setBackground(COLOR_PRIMARY);
         btnRefrescar.setForeground(Color.WHITE);
@@ -112,12 +123,66 @@ public class IFrmKardex extends JInternalFrame {
 
     private void attachEvents() {
         btnRefrescar.addActionListener(e -> {
-            // TODO: l\u00f3gica TXT para cargar movimientos del kardex del producto seleccionado
-            // Leer productos.txt y ventas.txt para calcular entradas/salidas
+            cargarMovimientos();
         });
 
         cbProducto.addActionListener(e -> {
-            // TODO: l\u00f3gica TXT para precargar datos al seleccionar producto
+            cargarMovimientos();
         });
+    }
+
+    private void cargarMovimientos() {
+        if (cbProducto.getSelectedIndex() <= 0) {
+            modelKardex.setRowCount(0);
+            lblStockActual.setText("0");
+            lblEntradas.setText("0");
+            lblSalidas.setText("0");
+            return;
+        }
+        
+        String prodStr = cbProducto.getSelectedItem().toString();
+        int idProducto = Integer.parseInt(prodStr.split(" - ")[0]);
+        
+        ProductoDAO pdao = new ProductoDAO();
+        int stockActual = 0;
+        for (Producto p : pdao.listarTodos()) {
+            if (p.getIdProducto() == idProducto) {
+                stockActual = p.getCantidad();
+                break;
+            }
+        }
+        
+        KardexDAO dao = new KardexDAO();
+        List<Kardex> lista = dao.listarPorProducto(idProducto);
+        
+        modelKardex.setRowCount(0);
+        
+        int totEntradas = 0;
+        int totSalidas = 0;
+        
+        int stockVirtual = 0;
+        
+        for (Kardex k : lista) {
+            if ("ENTRADA".equalsIgnoreCase(k.getTipoMovimiento())) {
+                totEntradas += k.getCantidad();
+                stockVirtual += k.getCantidad();
+            } else {
+                totSalidas += k.getCantidad();
+                stockVirtual -= k.getCantidad();
+            }
+            
+            modelKardex.addRow(new Object[]{
+                k.getFecha(),
+                k.getTipoMovimiento(),
+                k.getCantidad(),
+                stockVirtual,
+                "MOV-" + k.getIdMovimiento(),
+                k.getMotivo()
+            });
+        }
+        
+        lblStockActual.setText(String.valueOf(stockActual));
+        lblEntradas.setText(String.valueOf(totEntradas));
+        lblSalidas.setText(String.valueOf(totSalidas));
     }
 }

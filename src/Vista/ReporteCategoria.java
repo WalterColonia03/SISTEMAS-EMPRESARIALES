@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Categoria;
-import ArchivosTXT.ArchivoCategoriaTXT;
+import Modelo.CategoriaDAO;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
@@ -31,8 +31,8 @@ public class ReporteCategoria extends javax.swing.JInternalFrame {
 
     //lee las categorias guardadas en el archivo txt
     public void cargarTabla() {
-        ArchivoCategoriaTXT archivo = new ArchivoCategoriaTXT();
-        List<Categoria> lista = archivo.leer();
+        CategoriaDAO dao = new CategoriaDAO();
+        List<Categoria> lista = dao.listarTodos();
 
         // crea tabla y usuario no puede modificar los datos directamente 
         DefaultTableModel modelo = new DefaultTableModel() {

@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Cliente;
-import ArchivosTXT.ArchivoClienteTXT;
+import Modelo.ClienteDAO;
 import java.awt.Dimension;
 import java.util.List;
 import javax.swing.JOptionPane;
@@ -123,8 +123,8 @@ public class NewClient extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txt_apellidoActionPerformed
 
     private void jButton_GuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_GuardarActionPerformed
-        ArchivoClienteTXT archivo = new ArchivoClienteTXT();
-        List<Cliente> lista = archivo.leer();
+        ClienteDAO dao = new ClienteDAO();
+        List<Cliente> lista = dao.listarTodos();
 
         String nombre = txt_nombre.getText().trim();
         String apellido = txt_apellido.getText().trim();
@@ -155,20 +155,13 @@ public class NewClient extends javax.swing.JInternalFrame {
             }
         }
 
-        // Genera el ID del cliente automaticamente
-        int nuevoId = 1;
-        for (Cliente c : lista) {
-            if (c.getIdCliente() >= nuevoId) {
-                nuevoId = c.getIdCliente() + 1;
-            }
-        }
+        int nuevoId = dao.generarId();
 
         // Se crea el objeto cliente
         Cliente nuevo = new Cliente(nuevoId, nombre, apellido, dni, telefono, direccion, 1);
 
         // Aqui lo guarda
-        lista.add(nuevo);
-        archivo.guardar(lista);
+        dao.guardar(nuevo);
 
         JOptionPane.showMessageDialog(this, "Cliente guardado correctamente");
 

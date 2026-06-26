@@ -1,6 +1,6 @@
 package Vista;
 
-import ArchivosTXT.ArchivoVentaTXT;
+import Modelo.VentaDAO;
 import Clases.Venta;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
@@ -275,8 +275,8 @@ public class Registro_Ventas extends javax.swing.JInternalFrame {
 
     public void cargarTablaVentas(String mesSeleccionado) {
 
-        ArchivoVentaTXT archivo = new ArchivoVentaTXT();
-        List<Venta> lista = archivo.leer();
+        VentaDAO dao = new VentaDAO();
+        List<Venta> lista = dao.listarTodos();
 
         DefaultTableModel modelo = new DefaultTableModel() {
 
@@ -291,7 +291,8 @@ public class Registro_Ventas extends javax.swing.JInternalFrame {
         modelo.addColumn("Total");
         modelo.addColumn("Fecha");
 
-        double gananciaTotal = 0;
+        // CORRECCIÓN: BigDecimal para acumulación de totales (2026-06-26 — Auditoría ERP)
+        java.math.BigDecimal gananciaTotal = java.math.BigDecimal.ZERO;
 
         for (Venta v : lista) {
 
@@ -301,22 +302,23 @@ public class Registro_Ventas extends javax.swing.JInternalFrame {
 
             if (mes.equalsIgnoreCase(mesSeleccionado)) {
 
+                java.math.BigDecimal total = v.getTotal() != null ? v.getTotal() : java.math.BigDecimal.ZERO;
                 Object[] fila = {
                     v.getIdVenta(),
                     v.getCliente(),
-                    v.getTotal(),
+                    "S/ " + total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
                     v.getFecha()
                 };
 
                 modelo.addRow(fila);
 
-                gananciaTotal += v.getTotal();
+                gananciaTotal = gananciaTotal.add(total);
             }
         }
 
         jTable_ventas.setModel(modelo);
 
-        txt_GananciaTotal.setText(String.format("%.2f", gananciaTotal));
+        txt_GananciaTotal.setText(gananciaTotal.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
     }
 
     public String obtenerMes(String fecha) {

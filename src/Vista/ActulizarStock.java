@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Producto;
-import ArchivosTXT.ArchivoProductoTXT;
+import Modelo.ProductoDAO;
 import java.awt.Dimension;
 import java.util.List;
 import javax.swing.JOptionPane;
@@ -101,8 +101,8 @@ public class ActulizarStock extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoProductoTXT archivo = new ArchivoProductoTXT();
-        List<Producto> lista = archivo.leer();
+        ProductoDAO dao = new ProductoDAO();
+        List<Producto> lista = dao.listarTodos();
 
         String seleccion = jComboBox_productos.getSelectedItem().toString();
         int id = Integer.parseInt(seleccion.split("-")[0]);
@@ -143,8 +143,8 @@ public class ActulizarStock extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoProductoTXT archivo = new ArchivoProductoTXT();
-        List<Producto> lista = archivo.leer();
+        ProductoDAO dao = new ProductoDAO();
+        List<Producto> lista = dao.listarTodos();
 
         String seleccion = jComboBox_productos.getSelectedItem().toString();
         int id = Integer.parseInt(seleccion.split("-")[0]);
@@ -152,11 +152,10 @@ public class ActulizarStock extends javax.swing.JInternalFrame {
         for (Producto p : lista) {
             if (p.getIdProducto() == id) {
                 p.setCantidad(nuevoStock);
+                dao.actualizar(p);
                 break;
             }
         }
-
-        archivo.guardar(lista);
 
         JOptionPane.showMessageDialog(this, "Stock actualizado correctamente");
 
@@ -184,8 +183,8 @@ public class ActulizarStock extends javax.swing.JInternalFrame {
 
     public void cargarProductos() {
         try {
-            ArchivoProductoTXT archivo = new ArchivoProductoTXT();
-            List<Producto> lista = archivo.leer();
+            ProductoDAO dao = new ProductoDAO();
+            List<Producto> lista = dao.listarTodos();
 
             jComboBox_productos.removeAllItems();
             jComboBox_productos.addItem("Seleccione Producto");

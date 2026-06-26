@@ -1,31 +1,35 @@
 package Vista;
 
+import Clases.Cliente;
+import Modelo.ClienteDAO;
+import Modelo.ConexionDB;
 import Vista.Estilos.UIKit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.List;
 
+/**
+ * Creado/Modificado: 2026-06-25T23:53:00-05:00
+ */
 public class IFrmFidelizacion extends JInternalFrame {
 
-    private JTable tblClientesPuntos;
-    private DefaultTableModel modelClientesPuntos;
+    private JTable tblRanking;
+    private DefaultTableModel modelRanking;
     
-    // Configuración de Reglas de Puntos
-    private JTextField txtSolesPorPunto;
-    private JButton btnGuardarRegla;
-
-    // Formulario de Canjes
-    private JTextField txtIdCliente;
-    private JTextField txtPuntosDisponibles;
-    private JTextField txtPuntosACanjear;
-    private JComboBox<String> cbPremios;
-    private JButton btnCanjear;
-    private JButton btnLimpiar;
+    private JTable tblHistorial;
+    private DefaultTableModel modelHistorial;
+    
+    private JTextField txtBuscarDni;
+    private JButton btnBuscarHistorial;
 
     public IFrmFidelizacion() {
-        super("Módulo de Fidelización", true, true, true, true);
+        super("Programa de Fidelización CRM", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
@@ -34,40 +38,23 @@ public class IFrmFidelizacion extends JInternalFrame {
     }
 
     private void initComponents() {
-        // Tabla de puntos de clientes
-        String[] columns = {"ID Cliente", "Nombre", "Apellido", "DNI", "Puntos"};
-        modelClientesPuntos = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) { return false; }
+        String[] colsRanking = {"Puesto", "Cliente", "DNI", "Puntos Acumulados", "Nivel VIP"};
+        modelRanking = new DefaultTableModel(colsRanking, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
         };
-        tblClientesPuntos = UIKit.styledTable(modelClientesPuntos);
+        tblRanking = UIKit.styledTable(modelRanking);
 
-        // Reglas
-        txtSolesPorPunto = UIKit.textField();
-        txtSolesPorPunto.setText("10");
-        txtSolesPorPunto.setHorizontalAlignment(JTextField.RIGHT);
-        
-        btnGuardarRegla = UIKit.secondaryButton("Actualizar Regla");
+        String[] colsHistorial = {"ID Venta", "Fecha", "Total", "Método"};
+        modelHistorial = new DefaultTableModel(colsHistorial, 0) {
+            @Override public boolean isCellEditable(int row, int col) { return false; }
+        };
+        tblHistorial = UIKit.styledTable(modelHistorial);
 
-        // Formulario Canje
-        txtIdCliente = UIKit.readOnlyField();
-        
-        txtPuntosDisponibles = UIKit.readOnlyField();
-        txtPuntosDisponibles.setHorizontalAlignment(JTextField.RIGHT);
-        
-        txtPuntosACanjear = UIKit.textField();
-        txtPuntosACanjear.setHorizontalAlignment(JTextField.RIGHT);
-        
-        cbPremios = new JComboBox<>(new String[]{
-            "Vale de Descuento S/ 10 (100 Ptos)",
-            "Vale de Descuento S/ 25 (200 Ptos)",
-            "Bolsa Ecológica Laredo (50 Ptos)",
-            "Taza de Regalo (80 Ptos)"
-        });
-        cbPremios.setFont(UIKit.BODY);
+        txtBuscarDni = UIKit.textField();
+        txtBuscarDni.putClientProperty("JTextField.placeholderText", "Ingrese DNI del cliente...");
+        txtBuscarDni.setPreferredSize(new Dimension(200, 36));
 
-        btnCanjear = UIKit.primaryButton("Canjear Premio");
-        btnLimpiar = UIKit.secondaryButton("Limpiar");
+        btnBuscarHistorial = UIKit.primaryButton("Buscar Historial");
     }
 
     private void buildLayout() {
@@ -76,149 +63,107 @@ public class IFrmFidelizacion extends JInternalFrame {
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(
                 UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
 
-        // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Fidelización de Clientes", "Ventas  ›  Fidelización"),
+                UIKit.screenHeader("CRM y Fidelización", "Ventas  ›  Fidelización"),
                 BorderLayout.NORTH);
 
-        JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
-        cuerpo.setOpaque(false);
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.setFont(UIKit.BODY_BOLD);
 
-        // ── Panel Izquierdo: Tabla de Puntos de Clientes ──
-        JPanel pnlTabla = UIKit.card();
-        pnlTabla.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlTabla.add(UIKit.sectionHeader("Clientes y Puntos Acumulados", null), BorderLayout.NORTH);
+        // --- Pestaña 1: Ranking VIP ---
+        JPanel pnlRanking = UIKit.card();
+        pnlRanking.setLayout(new BorderLayout(0, UIKit.SPACE_MD));
+        pnlRanking.setBorder(new EmptyBorder(UIKit.SPACE_MD, UIKit.SPACE_MD, UIKit.SPACE_MD, UIKit.SPACE_MD));
+        pnlRanking.add(UIKit.sectionHeader("Top Clientes (Ranking VIP)", null), BorderLayout.NORTH);
+        pnlRanking.add(new JScrollPane(tblRanking), BorderLayout.CENTER);
+        tabs.addTab("Ranking de Clientes VIP", pnlRanking);
+
+        // --- Pestaña 2: Historial por Cliente ---
+        JPanel pnlHistorial = UIKit.card();
+        pnlHistorial.setLayout(new BorderLayout(0, UIKit.SPACE_MD));
+        pnlHistorial.setBorder(new EmptyBorder(UIKit.SPACE_MD, UIKit.SPACE_MD, UIKit.SPACE_MD, UIKit.SPACE_MD));
         
-        JScrollPane scroll = new JScrollPane(tblClientesPuntos);
-        scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
-        pnlTabla.add(scroll, BorderLayout.CENTER);
-
-        cuerpo.add(pnlTabla, BorderLayout.CENTER);
-
-        // ── Panel Derecho: Configuración y Canjes ──
-        JPanel pnlDerecho = new JPanel(new BorderLayout(0, UIKit.SPACE_LG));
-        pnlDerecho.setPreferredSize(new Dimension(340, 0));
-        pnlDerecho.setOpaque(false);
-
-        // Subpanel 1: Reglas de Fidelización
-        JPanel pnlReglas = UIKit.card();
-        pnlReglas.setLayout(new GridBagLayout());
-        GridBagConstraints gbcR = new GridBagConstraints();
-        gbcR.fill = GridBagConstraints.HORIZONTAL;
-        gbcR.weightx = 1.0;
-
-        gbcR.gridx = 0; gbcR.gridy = 0;
-        gbcR.gridwidth = 2;
-        gbcR.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlReglas.add(UIKit.sectionHeader("Regla de Acumulación", null), gbcR);
-
-        gbcR.gridy = 1;
-        gbcR.gridwidth = 1;
-        gbcR.insets = new Insets(0, 0, UIKit.SPACE_XS, UIKit.SPACE_SM);
-        pnlReglas.add(UIKit.fieldLabel("Soles por Punto (S/)"), gbcR);
+        JPanel pnlFiltro = new JPanel(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_SM, 0));
+        pnlFiltro.setOpaque(false);
+        pnlFiltro.add(UIKit.fieldLabel("DNI del Cliente:"));
+        pnlFiltro.add(txtBuscarDni);
+        pnlFiltro.add(btnBuscarHistorial);
         
-        gbcR.gridx = 1;
-        gbcR.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlReglas.add(new JLabel(""), gbcR); // placeholder
-        
-        gbcR.gridy = 2;
-        gbcR.gridx = 0;
-        gbcR.insets = new Insets(0, 0, 0, UIKit.SPACE_SM);
-        pnlReglas.add(txtSolesPorPunto, gbcR);
-        
-        gbcR.gridx = 1;
-        gbcR.insets = new Insets(0, 0, 0, 0);
-        pnlReglas.add(btnGuardarRegla, gbcR);
+        pnlHistorial.add(pnlFiltro, BorderLayout.NORTH);
+        pnlHistorial.add(new JScrollPane(tblHistorial), BorderLayout.CENTER);
+        tabs.addTab("Historial de Compras", pnlHistorial);
 
-        // Subpanel 2: Canje de Premios
-        JPanel pnlCanje = UIKit.card();
-        pnlCanje.setLayout(new GridBagLayout());
-        GridBagConstraints gbcC = new GridBagConstraints();
-        gbcC.fill = GridBagConstraints.HORIZONTAL;
-        gbcC.weightx = 1.0;
-
-        gbcC.gridx = 0; gbcC.gridy = 0;
-        gbcC.gridwidth = 2;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlCanje.add(UIKit.sectionHeader("Canjear Puntos", null), gbcC);
-
-        gbcC.gridy = 1;
-        gbcC.gridwidth = 1;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_XS, UIKit.SPACE_SM);
-        pnlCanje.add(UIKit.fieldLabel("ID Cliente"), gbcC);
-        
-        gbcC.gridx = 1;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlCanje.add(UIKit.fieldLabel("Puntos Disponibles"), gbcC);
-        
-        gbcC.gridy = 2;
-        gbcC.gridx = 0;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_MD, UIKit.SPACE_SM);
-        pnlCanje.add(txtIdCliente, gbcC);
-        
-        gbcC.gridx = 1;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlCanje.add(txtPuntosDisponibles, gbcC);
-
-        gbcC.gridy = 3;
-        gbcC.gridx = 0;
-        gbcC.gridwidth = 2;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlCanje.add(UIKit.fieldLabel("Premio a Canjear"), gbcC);
-        
-        gbcC.gridy = 4;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlCanje.add(cbPremios, gbcC);
-
-        gbcC.gridy = 5;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlCanje.add(UIKit.fieldLabel("Puntos a Descontar"), gbcC);
-        
-        gbcC.gridy = 6;
-        gbcC.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
-        pnlCanje.add(txtPuntosACanjear, gbcC);
-
-        JPanel pnlBotones = new JPanel(new GridLayout(2, 1, 0, UIKit.SPACE_SM));
-        pnlBotones.setOpaque(false);
-        pnlBotones.add(btnCanjear);
-        pnlBotones.add(btnLimpiar);
-
-        gbcC.gridy = 7;
-        gbcC.weighty = 1.0;
-        gbcC.anchor = GridBagConstraints.NORTH;
-        gbcC.insets = new Insets(0, 0, 0, 0);
-        pnlCanje.add(pnlBotones, gbcC);
-
-        pnlDerecho.add(pnlReglas, BorderLayout.NORTH);
-        pnlDerecho.add(pnlCanje, BorderLayout.CENTER);
-
-        cuerpo.add(pnlDerecho, BorderLayout.EAST);
-
-        getContentPane().add(cuerpo, BorderLayout.CENTER);
+        getContentPane().add(tabs, BorderLayout.CENTER);
     }
 
     private void attachEvents() {
-        btnGuardarRegla.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Regla de acumulación guardada: S/ " + txtSolesPorPunto.getText() + " = 1 punto.");
+        cargarRanking();
+        
+        btnBuscarHistorial.addActionListener(e -> {
+            String dni = txtBuscarDni.getText().trim();
+            if (dni.isEmpty()) return;
+            cargarHistorial(dni);
         });
+    }
 
-        btnCanjear.addActionListener(e -> {
-            // TODO: lógica TXT
-        });
-
-        btnLimpiar.addActionListener(e -> {
-            txtIdCliente.setText("");
-            txtPuntosDisponibles.setText("");
-            txtPuntosACanjear.setText("");
-            cbPremios.setSelectedIndex(0);
-        });
-
-        tblClientesPuntos.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tblClientesPuntos.getSelectedRow() != -1) {
-                int row = tblClientesPuntos.getSelectedRow();
-                txtIdCliente.setText(modelClientesPuntos.getValueAt(row, 0).toString());
-                txtPuntosDisponibles.setText(modelClientesPuntos.getValueAt(row, 4).toString());
+    private void cargarRanking() {
+        ClienteDAO dao = new ClienteDAO();
+        List<Cliente> clientes = dao.listarTodos();
+        // Ordenar por puntos desc
+        clientes.sort((c1, c2) -> Integer.compare(c2.getPuntos(), c1.getPuntos()));
+        
+        modelRanking.setRowCount(0);
+        int puesto = 1;
+        for (Cliente c : clientes) {
+            if (c.getPuntos() > 0) { // Solo mostrar los que tienen puntos
+                String nivel = c.getPuntos() >= 1000 ? "Oro" : (c.getPuntos() >= 500 ? "Plata" : "Bronce");
+                modelRanking.addRow(new Object[]{
+                    puesto++,
+                    c.getNombre() + " " + (c.getApellido()!=null?c.getApellido():""),
+                    c.getDni(),
+                    c.getPuntos(),
+                    nivel
+                });
             }
-        });
+        }
+    }
+
+    private void cargarHistorial(String dni) {
+        // Asumiendo que tenemos una tb_venta con el cliente
+        modelHistorial.setRowCount(0);
+        // Para la demo o si VentaDAO no tiene buscarPorCliente, haremos un query directo
+        String sql = "SELECT idVenta, fecha, total FROM tb_venta WHERE cliente LIKE ?";
+        
+        // Primero buscamos el nombre del cliente basado en su DNI
+        ClienteDAO cdao = new ClienteDAO();
+        String nombreCliente = "";
+        for (Cliente c : cdao.listarTodos()) {
+            if (c.getDni() != null && c.getDni().equals(dni)) {
+                nombreCliente = c.getNombre();
+                break;
+            }
+        }
+        
+        if (nombreCliente.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Cliente no encontrado.");
+            return;
+        }
+
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+             ps.setString(1, "%" + nombreCliente + "%");
+             try (ResultSet rs = ps.executeQuery()) {
+                 while (rs.next()) {
+                     modelHistorial.addRow(new Object[]{
+                         rs.getInt("idVenta"),
+                         rs.getString("fecha"),
+                         String.format("S/ %.2f", rs.getDouble("total")),
+                         "Efectivo" // Mockup para método de pago temporal
+                     });
+                 }
+             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

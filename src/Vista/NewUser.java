@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Usuario;
-import ArchivosTXT.ArchivoUsuarioTXT;
+import Modelo.UsuarioDAO;
 import java.awt.Dimension;
 import java.util.List;
 import javax.swing.JOptionPane;
@@ -129,8 +129,8 @@ public class NewUser extends javax.swing.JInternalFrame {
 
     private void jButton_GuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_GuardarActionPerformed
 
-        ArchivoUsuarioTXT archivo = new ArchivoUsuarioTXT();
-        List<Usuario> lista = archivo.leer();
+        UsuarioDAO dao = new UsuarioDAO();
+        List<Usuario> lista = dao.listarTodos();
 
         String nombre = txt_nombre.getText().trim();
         String apellido = txt_apellido.getText().trim();
@@ -162,18 +162,12 @@ public class NewUser extends javax.swing.JInternalFrame {
             }
         }
 
-        int nuevoId = 1;
-        for (Usuario u : lista) {
-            if (u.getIdUsuario() >= nuevoId) {
-                nuevoId = u.getIdUsuario() + 1;
-            }
-        }
+        int nuevoId = dao.generarId();
 
         // Agrega eso en la lista
         Usuario nuevo = new Usuario(nuevoId, nombre, apellido, usuario, password, telefono, rol, 1);
 
-        lista.add(nuevo);
-        archivo.guardar(lista);
+        dao.guardar(nuevo);
 
         JOptionPane.showMessageDialog(this, "Usuario guardado correctamente");
 

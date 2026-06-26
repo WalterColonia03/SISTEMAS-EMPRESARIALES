@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Categoria;
-import ArchivosTXT.ArchivoCategoriaTXT;
+import Modelo.CategoriaDAO;
 import java.awt.Dimension;
 import java.util.List;
 import javax.swing.JOptionPane;
@@ -73,8 +73,8 @@ public class NewCategory extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txt_descripcionesActionPerformed
 
     private void jButton_Guardar_categoriaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_Guardar_categoriaActionPerformed
-        ArchivoCategoriaTXT archivo = new ArchivoCategoriaTXT();
-        List<Categoria> lista = archivo.leer();
+        CategoriaDAO dao = new CategoriaDAO();
+        List<Categoria> lista = dao.listarTodos();
 
         String descripcion = txt_descripciones.getText().trim();
 
@@ -92,26 +92,12 @@ public class NewCategory extends javax.swing.JInternalFrame {
             }
         }
 
-        // Genera la enumeracion
-        int nuevoId = 1;
-        if (!lista.isEmpty()) {
-            nuevoId = lista.get(lista.size() - 1).getIdCategoria() + 1;
-
-            //Busca el ID más alto (no solo el último)
-            //LUEGO SE VERA SI SE CAMBIA(servira para cuando quiera eliminar)
-            //int nuevoId = 1;
-            //for (Categoria c : lista) {
-            //if (c.getIdCategoria() >= nuevoId) {
-            //nuevoId = c.getIdCategoria() + 1;
-            //}
-            //}
-        }
+        int nuevoId = dao.generarId();
 
         // Guarda la categoria(crea un obejto)
         Categoria nueva = new Categoria(nuevoId, descripcion, 1);
 
-        lista.add(nueva);
-        archivo.guardar(lista);
+        dao.guardar(nueva);
 
         JOptionPane.showMessageDialog(this, "Categoría guardada correctamente");
 

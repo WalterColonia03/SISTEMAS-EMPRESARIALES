@@ -2,8 +2,8 @@ package Vista;
 
 import Clases.Categoria;
 import Clases.Producto;
-import ArchivosTXT.ArchivoCategoriaTXT;
-import ArchivosTXT.ArchivoProductoTXT;
+import Modelo.CategoriaDAO;
+import Modelo.ProductoDAO;
 import java.awt.Dimension;
 import java.util.List;
 //import javax.swing.Icon;
@@ -193,9 +193,6 @@ public class GestionarProductos extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoProductoTXT archivo = new ArchivoProductoTXT();
-        List<Producto> lista = archivo.leer();
-
         String nombre = txt_nombre.getText().trim();
         String cantidadTexto = txt_cantidad.getText().trim();
         String precioTexto = txt_precio.getText().trim();
@@ -208,7 +205,8 @@ public class GestionarProductos extends javax.swing.JInternalFrame {
         }
 
         int cantidad = Integer.parseInt(cantidadTexto);
-        double precio = Double.parseDouble(precioTexto);
+        // CORRECCIÓN: BigDecimal para precio (2026-06-26 — Auditoría ERP)
+        java.math.BigDecimal precio = new java.math.BigDecimal(precioTexto.replace(",", "."));
 
         //Valida que se haya elegido una categoria
         if (jComboBox_categoria.getSelectedIndex() == 0) {
@@ -220,42 +218,27 @@ public class GestionarProductos extends javax.swing.JInternalFrame {
         String seleccion = jComboBox_categoria.getSelectedItem().toString();
         int idCategoria = Integer.parseInt(seleccion.split("-")[0]);
 
+        ProductoDAO dao = new ProductoDAO();
+        List<Producto> lista = dao.listarTodos();
+        
         // Obtener ID real del producto
         int idProducto = lista.get(fila).getIdProducto();
 
         // Verificar productos duplicados
         for (Producto otro : lista) {
-
             // Ignorar el mismo producto que estamos editando
             if (otro.getIdProducto() != idProducto) {
-
                 if (otro.getNombre().equalsIgnoreCase(nombre)
                         && otro.getDescripcion().equalsIgnoreCase(descripcion)
                         && otro.getIdCategoria() == idCategoria) {
-
-                    JOptionPane.showMessageDialog(this,
-                            "El producto ya existe");
-
+                    JOptionPane.showMessageDialog(this, "El producto ya existe");
                     return;
                 }
             }
         }
 
-        for (Producto p : lista) {
-
-            if (p.getIdProducto() == idProducto) {
-
-                p.setNombre(nombre);
-                p.setCantidad(cantidad);
-                p.setPrecio(precio);
-                p.setDescripcion(descripcion);
-                p.setIdCategoria(idCategoria);
-
-                break;
-            }
-        }
-
-        archivo.guardar(lista);
+        Producto p = new Producto(idProducto, nombre, cantidad, precio, descripcion, idCategoria, 1);
+        dao.actualizar(p);
 
         JOptionPane.showMessageDialog(this, "Producto actualizado");
 
@@ -285,22 +268,14 @@ public class GestionarProductos extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoProductoTXT archivo = new ArchivoProductoTXT();
-        List<Producto> lista = archivo.leer();
+        ProductoDAO dao = new ProductoDAO();
+        List<Producto> lista = dao.listarTodos();
 
         // Obtener ID real del producto
         int idProducto = lista.get(fila).getIdProducto();
 
         // Eliminar por ID
-        for (Producto p : lista) {
-
-            if (p.getIdProducto() == idProducto) {
-                lista.remove(p);
-                break;
-            }
-        }
-
-        archivo.guardar(lista);
+        dao.eliminar(idProducto);
 
         JOptionPane.showMessageDialog(this, "Producto eliminado");
 
@@ -330,11 +305,11 @@ public class GestionarProductos extends javax.swing.JInternalFrame {
 
     public void cargarTabla() {
 
-        ArchivoProductoTXT archivoP = new ArchivoProductoTXT();
-        ArchivoCategoriaTXT archivoC = new ArchivoCategoriaTXT();
+        ProductoDAO daoP = new ProductoDAO();
+        CategoriaDAO daoC = new CategoriaDAO();
 
-        List<Producto> listaP = archivoP.leer();
-        List<Categoria> listaC = archivoC.leer();
+        List<Producto> listaP = daoP.listarTodos();
+        List<Categoria> listaC = daoC.listarTodos();
 
         DefaultTableModel modelo = new DefaultTableModel() {
             @Override
@@ -394,8 +369,8 @@ public class GestionarProductos extends javax.swing.JInternalFrame {
 
     public void cargarCategorias() {
 
-        ArchivoCategoriaTXT archivo = new ArchivoCategoriaTXT();
-        List<Categoria> lista = archivo.leer();
+        CategoriaDAO dao = new CategoriaDAO();
+        List<Categoria> lista = dao.listarTodos();
 
         jComboBox_categoria.removeAllItems();
         jComboBox_categoria.addItem("Seleccione categoria");

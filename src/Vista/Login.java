@@ -2,7 +2,7 @@ package Vista;
 
 import java.awt.Dimension;
 import Clases.Usuario;
-import ArchivosTXT.ArchivoUsuarioTXT;
+import Modelo.UsuarioDAO;
 import java.io.IOException;
 import java.util.List;
 import javax.swing.JOptionPane;
@@ -163,9 +163,9 @@ public class Login extends javax.swing.JFrame {
         String user = txt_Usuario.getText();
         String pass = new String(txt_Password.getPassword());
 
-        ArchivoUsuarioTXT archivo = new ArchivoUsuarioTXT();
+        UsuarioDAO dao = new UsuarioDAO();
         // No se usa try-catch aquí porque el método leer() ya maneja las excepciones internamente
-        List<Usuario> lista = archivo.leer();
+        List<Usuario> lista = dao.listarTodos();
         //try {
         //lista = archivo.leer();
         //} catch (IOException ex) {

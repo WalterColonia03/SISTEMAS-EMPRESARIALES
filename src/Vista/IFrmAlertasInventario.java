@@ -1,11 +1,15 @@
 package Vista;
 
+import Clases.Producto;
+import Modelo.ProductoDAO;
 import Vista.Estilos.UIKit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.List;
 import java.awt.*;
 
 public class IFrmAlertasInventario extends JInternalFrame {
@@ -89,17 +93,7 @@ public class IFrmAlertasInventario extends JInternalFrame {
             }
         });
 
-        // Datos de ejemplo
-        modelPorVencer.addRow(new Object[]{"Leche Gloria 1L", "L2405A", "2025-08-15", "54", "48"});
-        modelPorVencer.addRow(new Object[]{"Yogurt Laive Fresa", "Y2403B", "2025-07-20", "28", "24"});
-        modelPorVencer.addRow(new Object[]{"Queso Mantecoso", "Q2401C", "2025-07-01", "9", "12"});
-
-        modelSinRotacion.addRow(new Object[]{"Detergente Bolivar 500g", "15", "0", "0", "45"});
-        modelSinRotacion.addRow(new Object[]{"Shampoo Pantene", "8", "0", "0", "60"});
-
-        modelStockBajo.addRow(new Object[]{"Arroz Costeño 5kg", "2", "10", "-8"});
-        modelStockBajo.addRow(new Object[]{"Aceite Primor 1L", "3", "8", "-5"});
-        modelStockBajo.addRow(new Object[]{"Fideos Don Vittorio", "4", "15", "-11"});
+        cargarAlertas();
     }
 
     private void buildLayout() {
@@ -149,7 +143,31 @@ public class IFrmAlertasInventario extends JInternalFrame {
 
     private void attachEvents() {
         btnRefrescar.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Alertas actualizadas desde los archivos TXT.");
+            cargarAlertas();
+            JOptionPane.showMessageDialog(this, "Alertas actualizadas desde la base de datos.");
         });
+    }
+
+    private void cargarAlertas() {
+        ProductoDAO pdao = new ProductoDAO();
+        List<Producto> lista = pdao.listarTodos();
+        
+        modelStockBajo.setRowCount(0);
+        modelSinRotacion.setRowCount(0);
+        modelPorVencer.setRowCount(0);
+        
+        int stockMinimo = 10; // Valor fijo de stock mínimo por ahora
+        
+        for (Producto p : lista) {
+            if (p.getCantidad() < stockMinimo) {
+                int deficit = p.getCantidad() - stockMinimo;
+                modelStockBajo.addRow(new Object[]{
+                    p.getNombre(),
+                    p.getCantidad(),
+                    stockMinimo,
+                    String.valueOf(deficit)
+                });
+            }
+        }
     }
 }

@@ -1,11 +1,16 @@
 package Vista;
 
+import Clases.FlujoCaja;
+import Modelo.FlujoCajaDAO;
 import Vista.Estilos.UIKit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
 
 public class IFrmFlujoCaja extends JInternalFrame {
 
@@ -13,11 +18,9 @@ public class IFrmFlujoCaja extends JInternalFrame {
     private JTextField txtFechaFin;
     private JButton btnFiltrar;
 
-    // These labels will be updated when the real logic kicks in
-    // For the UI redesign, we'll store references to the cards or update logic later
-    private String valIngresos = "S/ 0.00";
-    private String valEgresos = "S/ 0.00";
-    private String valSaldoNeto = "S/ 0.00";
+    private JLabel lblIngresos;
+    private JLabel lblEgresos;
+    private JLabel lblSaldoNeto;
     
     private JLabel lblTipoCambio;
     private JTextField txtNuevoTipoCambio;
@@ -89,9 +92,32 @@ public class IFrmFlujoCaja extends JInternalFrame {
         // Tarjetas KPI (Izquierda)
         JPanel pnlCards = new JPanel(new GridLayout(1, 3, UIKit.SPACE_MD, 0));
         pnlCards.setOpaque(false);
-        pnlCards.add(UIKit.kpiCard("Total Ingresos", valIngresos, "Período actual", UIKit.SUCCESS));
-        pnlCards.add(UIKit.kpiCard("Total Egresos", valEgresos, "Período actual", UIKit.DANGER));
-        pnlCards.add(UIKit.kpiCard("Saldo Neto", valSaldoNeto, "Ingresos - Egresos", UIKit.PRIMARY));
+        
+        lblIngresos = new JLabel("S/ 0.00");
+        lblIngresos.setFont(UIKit.H2);
+        lblEgresos = new JLabel("S/ 0.00");
+        lblEgresos.setFont(UIKit.H2);
+        lblSaldoNeto = new JLabel("S/ 0.00");
+        lblSaldoNeto.setFont(UIKit.H2);
+        
+        JPanel cardIngresos = UIKit.card();
+        cardIngresos.setLayout(new BorderLayout());
+        cardIngresos.add(new JLabel("Total Ingresos"), BorderLayout.NORTH);
+        cardIngresos.add(lblIngresos, BorderLayout.CENTER);
+        
+        JPanel cardEgresos = UIKit.card();
+        cardEgresos.setLayout(new BorderLayout());
+        cardEgresos.add(new JLabel("Total Egresos"), BorderLayout.NORTH);
+        cardEgresos.add(lblEgresos, BorderLayout.CENTER);
+        
+        JPanel cardSaldo = UIKit.card();
+        cardSaldo.setLayout(new BorderLayout());
+        cardSaldo.add(new JLabel("Saldo Neto"), BorderLayout.NORTH);
+        cardSaldo.add(lblSaldoNeto, BorderLayout.CENTER);
+        
+        pnlCards.add(cardIngresos);
+        pnlCards.add(cardEgresos);
+        pnlCards.add(cardSaldo);
         
         pnlSuperior.add(pnlCards, BorderLayout.CENTER);
 
@@ -179,8 +205,10 @@ public class IFrmFlujoCaja extends JInternalFrame {
     }
 
     private void attachEvents() {
+        cargarFlujo();
+        
         btnFiltrar.addActionListener(e -> {
-            // TODO: lógica TXT para filtrar movimientos por rango de fechas desde flujo_caja.txt
+            cargarFlujo();
         });
 
         btnActualizarTC.addActionListener(e -> {
@@ -191,15 +219,70 @@ public class IFrmFlujoCaja extends JInternalFrame {
         });
 
         btnNuevoIngreso.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Formulario para nuevo ingreso (próximamente).");
+            registrarMovimiento("INGRESO");
         });
 
         btnNuevoEgreso.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Formulario para nuevo egreso (próximamente).");
+            registrarMovimiento("EGRESO");
         });
 
         btnExportar.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Reporte exportado exitosamente.");
+            JOptionPane.showMessageDialog(this, "Reporte exportado exitosamente (Simulado).");
         });
+    }
+
+    private void registrarMovimiento(String tipo) {
+        JTextField txtConcepto = new JTextField();
+        JTextField txtMonto = new JTextField();
+        Object[] msg = {
+            "Concepto:", txtConcepto,
+            "Monto (S/):", txtMonto
+        };
+        int opt = JOptionPane.showConfirmDialog(this, msg, "Nuevo " + tipo, JOptionPane.OK_CANCEL_OPTION);
+        if (opt == JOptionPane.OK_OPTION) {
+            try {
+                FlujoCaja f = new FlujoCaja();
+                f.setFecha(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
+                f.setTipo(tipo);
+                f.setConcepto(txtConcepto.getText());
+                // CORRECCIÓN: BigDecimal en vez de double para precisión financiera
+                f.setMonto(new java.math.BigDecimal(txtMonto.getText().replace(",", ".")));
+
+                FlujoCajaDAO dao = new FlujoCajaDAO();
+                dao.guardar(f);
+                cargarFlujo();
+            } catch (NumberFormatException nfe) {
+                Utils.LoggerGlobal.error("IFrmFlujoCaja: monto inválido", nfe);
+                JOptionPane.showMessageDialog(this, "Error: ingrese un monto numérico válido (ej: 150.50)");
+            } catch (Exception ex) {
+                Utils.LoggerGlobal.error("IFrmFlujoCaja.registrarMovimiento() falló", ex);
+                JOptionPane.showMessageDialog(this, "Error al registrar movimiento: " + ex.getMessage());
+            }
+        }
+    }
+
+    private void cargarFlujo() {
+        FlujoCajaDAO dao = new FlujoCajaDAO();
+        List<FlujoCaja> lista = dao.listarTodos();
+        modelMovimientos.setRowCount(0);
+        
+        // CORRECCIÓN: acumuladores BigDecimal (2026-06-26 — Auditoría ERP)
+        java.math.BigDecimal totalIng = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal totalEgr = java.math.BigDecimal.ZERO;
+
+        for (FlujoCaja f : lista) {
+            java.math.BigDecimal monto = f.getMonto() != null ? f.getMonto() : java.math.BigDecimal.ZERO;
+            modelMovimientos.addRow(new Object[]{
+                f.getFecha(), f.getTipo(), f.getConcepto(),
+                "S/ " + monto.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()
+            });
+            if ("INGRESO".equals(f.getTipo())) totalIng = totalIng.add(monto);
+            if ("EGRESO".equals(f.getTipo())) totalEgr = totalEgr.add(monto);
+        }
+
+        java.math.BigDecimal saldo = totalIng.subtract(totalEgr);
+        lblIngresos.setText("S/ " + totalIng.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        lblEgresos.setText("S/ " + totalEgr.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        lblSaldoNeto.setText("S/ " + saldo.abs().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
     }
 }

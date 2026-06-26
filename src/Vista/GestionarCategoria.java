@@ -1,8 +1,8 @@
 package Vista;
 
 import Clases.Categoria;
-import ArchivosTXT.ArchivoCategoriaTXT;
-import ArchivosTXT.ArchivoProductoTXT;
+import Modelo.CategoriaDAO;
+import Modelo.ProductoDAO;
 import Clases.Producto;
 import Vista.Estilos.UIKit;
 
@@ -137,8 +137,8 @@ public class GestionarCategoria extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoCategoriaTXT archivo = new ArchivoCategoriaTXT();
-        List<Categoria> lista = archivo.leer();
+        CategoriaDAO dao = new CategoriaDAO();
+        List<Categoria> lista = dao.listarTodos();
 
         int id = Integer.parseInt(jTable_categoria.getValueAt(fila, 0).toString());
 
@@ -149,14 +149,8 @@ public class GestionarCategoria extends javax.swing.JInternalFrame {
             }
         }
 
-        for (Categoria c : lista) {
-            if (c.getIdCategoria() == id) {
-                c.setDescripcion(nuevaDescripcion);
-                break;
-            }
-        }
-
-        archivo.guardar(lista);
+        Categoria catActualizar = new Categoria(id, nuevaDescripcion, 1);
+        dao.actualizar(catActualizar);
 
         JOptionPane.showMessageDialog(this, "Categoría actualizada");
 
@@ -174,8 +168,8 @@ public class GestionarCategoria extends javax.swing.JInternalFrame {
 
         int id = Integer.parseInt(jTable_categoria.getValueAt(fila, 0).toString());
 
-        ArchivoProductoTXT archivoProducto = new ArchivoProductoTXT();
-        List<Producto> listaProductos = archivoProducto.leer();
+        ProductoDAO daoProducto = new ProductoDAO();
+        List<Producto> listaProductos = daoProducto.listarTodos();
         for (Producto p : listaProductos) {
             if (p.getIdCategoria() == id) {
                 JOptionPane.showMessageDialog(this,
@@ -193,12 +187,8 @@ public class GestionarCategoria extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoCategoriaTXT archivo = new ArchivoCategoriaTXT();
-        List<Categoria> lista = archivo.leer();
-
-        lista.removeIf(c -> c.getIdCategoria() == id);
-
-        archivo.guardar(lista);
+        CategoriaDAO dao = new CategoriaDAO();
+        dao.eliminar(id);
 
         JOptionPane.showMessageDialog(this, "Categoría eliminada");
 
@@ -208,8 +198,8 @@ public class GestionarCategoria extends javax.swing.JInternalFrame {
 
     public void cargarTabla() {
 
-        ArchivoCategoriaTXT archivo = new ArchivoCategoriaTXT();
-        List<Categoria> lista = archivo.leer();
+        CategoriaDAO dao = new CategoriaDAO();
+        List<Categoria> lista = dao.listarTodos();
 
         DefaultTableModel modelo = new DefaultTableModel() {
             @Override

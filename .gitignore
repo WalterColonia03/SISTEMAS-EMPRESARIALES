@@ -8,3 +8,11 @@ nbproject/private/
 # Archivos de SO
 .DS_Store
 Thumbs.db
+
+# === SEGURIDAD: Datos sensibles — NO subir al repositorio ===
+# Contiene credenciales de BD y token JWT de API externa
+config.properties
+
+# Logs del sistema en runtime
+logs/
+*.log

@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import Clases.Sesion;
+import Utils.LoggerGlobal;
 import Vista.Estilos.UIKit;
 
 /**
@@ -29,8 +30,8 @@ public class FrmDashboard extends JFrame {
     private JButton btnCategorias, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario;
     // Compras
     private JButton btnCompras;
-    // Finanzas
-    private JButton btnFlujoCaja, btnLibroMayor, btnCuentasCP, btnRepVentas;
+    // Finanzas y Reportes
+    private JButton btnFlujoCaja, btnLibroMayor, btnCuentasCP, btnRepVentas, btnReportesAvanzados;
     // Personal
     private JButton btnEmpleados, btnPlanilla;
     // Administración
@@ -41,6 +42,10 @@ public class FrmDashboard extends JFrame {
     // Botón actualmente seleccionado en el sidebar
     private JButton btnSeleccionado = null;
 
+    // Seguridad: Timer de Inactividad (FR-040)
+    private Timer inactividadTimer;
+    private static final int TIEMPO_INACTIVIDAD = 30 * 60 * 1000; // 30 minutos
+
     public FrmDashboard() {
         super("Minimarket LAREDO - Sistema ERP");
         initComponents();
@@ -48,6 +53,30 @@ public class FrmDashboard extends JFrame {
         attachEvents();
         aplicarRol();
         configFrame();
+        iniciarTimerInactividad();
+    }
+
+    private void iniciarTimerInactividad() {
+        inactividadTimer = new Timer(TIEMPO_INACTIVIDAD, e -> {
+            // FR-020-v2 CA-2: registrar cierre por inactividad
+            Utils.BitacoraService.registrar(
+                Sesion.getUsuario(),
+                Utils.BitacoraService.MOD_LOGIN,
+                "CIERRE_INACTIVIDAD",
+                Utils.BitacoraService.OK,
+                "Sesion cerrada por inactividad (30 min)"
+            );
+            JOptionPane.showMessageDialog(this, "Sesión cerrada por inactividad (30 minutos).", "Seguridad", JOptionPane.WARNING_MESSAGE);
+            new FrmLogin().setVisible(true);
+            this.dispose();
+        });
+        inactividadTimer.setRepeats(false);
+        inactividadTimer.start();
+
+        long eventMask = AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.KEY_EVENT_MASK;
+        Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
+            inactividadTimer.restart();
+        }, eventMask);
     }
 
     private void initComponents() {
@@ -71,10 +100,11 @@ public class FrmDashboard extends JFrame {
         
         btnCompras = buildMenuButton("Registro de Compras");
         
-        btnFlujoCaja = buildMenuButton("Flujo de Caja");
-        btnLibroMayor = buildMenuButton("Libro Mayor");
-        btnCuentasCP = buildMenuButton("Cuentas por Cobrar y Pagar");
-        btnRepVentas = buildMenuButton("Reporte de Ventas");
+        btnFlujoCaja            = buildMenuButton("Flujo de Caja");
+        btnLibroMayor           = buildMenuButton("Libro Mayor");
+        btnCuentasCP            = buildMenuButton("Cuentas por Cobrar y Pagar");
+        btnRepVentas            = buildMenuButton("Reporte de Ventas");
+        btnReportesAvanzados    = buildMenuButton("Reportes Avanzados (BI)");
         
         btnEmpleados = buildMenuButton("Ficha de Empleados");
         btnPlanilla = buildMenuButton("Planilla y Asistencia");
@@ -113,7 +143,9 @@ public class FrmDashboard extends JFrame {
         pnlMenuContainer.add(navGroup("Clientes y Proveedores", btnClientes, btnProveedores));
         pnlMenuContainer.add(navGroup("Inventario", btnCategorias, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario));
         pnlMenuContainer.add(navGroup("Compras", btnCompras));
-        pnlMenuContainer.add(navGroup("Finanzas", btnFlujoCaja, btnLibroMayor, btnCuentasCP, btnRepVentas));
+        pnlMenuContainer.add(navGroup("Finanzas y Reportes",
+            btnFlujoCaja, btnLibroMayor, btnCuentasCP,
+            btnRepVentas, btnReportesAvanzados));
         pnlMenuContainer.add(navGroup("Personal", btnEmpleados, btnPlanilla));
         pnlMenuContainer.add(navGroup("Administración", btnUsuarios, btnAuditoria, btnConfig));
         pnlMenuContainer.add(Box.createVerticalGlue());
@@ -324,6 +356,8 @@ public class FrmDashboard extends JFrame {
         btnLibroMayor.addActionListener(e -> openFrame(new IFrmLibroMayor(), "Libro Mayor"));
         btnCuentasCP.addActionListener(e -> openFrame(new IFrmCuentasCobrarPagar(), "Cuentas Cobrar / Pagar"));
         btnRepVentas.addActionListener(e -> openFrame(new IFrmReporteVentas(), "Reporte de Ventas"));
+        // FR-006 CA-5: solo Gerente/Admin — la restricción de visibilidad está en aplicarRol()
+        btnReportesAvanzados.addActionListener(e -> openFrame(new IFrmReportesAvanzados(), "Reportes Avanzados"));
         
         btnEmpleados.addActionListener(e -> openFrame(new IFrmFichaEmpleados(), "Empleados"));
         btnPlanilla.addActionListener(e -> openFrame(new IFrmPlanillaAsistencia(), "Planilla y Asistencia"));
@@ -335,6 +369,14 @@ public class FrmDashboard extends JFrame {
         btnLogout.addActionListener(e -> {
             int op = JOptionPane.showConfirmDialog(this, "¿Cerrar sesión?", "Salir", JOptionPane.YES_NO_OPTION);
             if (op == JOptionPane.YES_OPTION) {
+                // FR-020-v2 CA-1: registrar cierre de sesión manual
+                Utils.BitacoraService.registrar(
+                    Sesion.getUsuario(),
+                    Utils.BitacoraService.MOD_LOGIN,
+                    "LOGOUT",
+                    Utils.BitacoraService.OK,
+                    "Cierre de sesión manual"
+                );
                 new FrmLogin().setVisible(true);
                 this.dispose();
             }
@@ -378,6 +420,8 @@ public class FrmDashboard extends JFrame {
             btnPlanilla.setVisible(false);
             btnFlujoCaja.setVisible(false);
             btnLibroMayor.setVisible(false);
+            // FR-006 CA-5: Reportes Avanzados solo para Gerente/Administrador
+            btnReportesAvanzados.setVisible(false);
         }
     }
 

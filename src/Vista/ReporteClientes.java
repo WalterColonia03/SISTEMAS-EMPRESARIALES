@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Cliente;
-import ArchivosTXT.ArchivoClienteTXT;
+import Modelo.ClienteDAO;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
@@ -32,9 +32,9 @@ public class ReporteClientes extends javax.swing.JInternalFrame {
     //lee las categorias guardadas en el archivo txt
     public void cargarTabla() {
 
-        ArchivoClienteTXT archivo = new ArchivoClienteTXT();
+        ClienteDAO dao = new ClienteDAO();
 
-        List<Cliente> lista = archivo.leer();
+        List<Cliente> lista = dao.listarTodos();
 
         DefaultTableModel modelo = new DefaultTableModel() {
 

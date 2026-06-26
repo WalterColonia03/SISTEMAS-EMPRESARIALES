@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Producto;
-import ArchivosTXT.ArchivoProductoTXT;
+import Modelo.ProductoDAO;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Element;
@@ -32,9 +32,9 @@ public class ReporteProductos extends javax.swing.JInternalFrame {
     //lee las categorias guardadas en el archivo txt
     public void cargarTabla() {
 
-        ArchivoProductoTXT archivo = new ArchivoProductoTXT();
+        ProductoDAO dao = new ProductoDAO();
 
-        List<Producto> lista = archivo.leer();
+        List<Producto> lista = dao.listarTodos();
 
         DefaultTableModel modelo = new DefaultTableModel() {
 

@@ -1,9 +1,14 @@
 package Vista;
 
+import Clases.LibroMayor;
+import Modelo.LibroMayorDAO;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class IFrmLibroMayor extends JInternalFrame {
 
@@ -72,16 +77,9 @@ public class IFrmLibroMayor extends JInternalFrame {
         lblSaldoActual.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblSaldoActual.setForeground(COLOR_PRIMARY);
 
-        // Datos de ejemplo
-        modelAsientos.addRow(new Object[]{"2025-06-01", "Venta al contado", "101 Efectivo", "701 Ventas", "1,200.00", "0.00", "ASC-001"});
-        modelAsientos.addRow(new Object[]{"2025-06-01", "Venta al contado", "701 Ventas", "101 Efectivo", "0.00", "1,200.00", "ASC-001"});
-        modelAsientos.addRow(new Object[]{"2025-06-02", "Compra mercader\u00eda", "601 Compras", "421 Ctas Pagar", "850.00", "0.00", "ASC-002"});
-        modelAsientos.addRow(new Object[]{"2025-06-02", "Compra mercader\u00eda", "421 Ctas Pagar", "601 Compras", "0.00", "850.00", "ASC-002"});
-        modelAsientos.addRow(new Object[]{"2025-06-03", "Pago a proveedor", "421 Ctas Pagar", "101 Efectivo", "850.00", "0.00", "ASC-003"});
-        modelAsientos.addRow(new Object[]{"2025-06-03", "Pago a proveedor", "101 Efectivo", "421 Ctas Pagar", "0.00", "850.00", "ASC-003"});
-
-        lblDebeTotal.setText("S/ 2,900.00");
-        lblHaberTotal.setText("S/ 2,900.00");
+        // Datos de ejemplo removidos, se cargarán desde la BD en attachEvents()
+        lblDebeTotal.setText("S/ 0.00");
+        lblHaberTotal.setText("S/ 0.00");
         lblSaldoActual.setText("S/ 0.00");
     }
 
@@ -159,14 +157,77 @@ public class IFrmLibroMayor extends JInternalFrame {
     }
 
     private void attachEvents() {
+        // Carga inicial
+        cargarDatos();
+
         btnFiltrar.addActionListener(e -> {
-            // TODO: l\u00f3gica TXT para filtrar asientos contables por cuenta y rango de fechas desde libro_mayor.txt
-            // Actualizar totales Debe, Haber y saldos
+            cargarDatos();
         });
 
         btnRefrescar.addActionListener(e -> {
-            // TODO: l\u00f3gica TXT para recargar todos los asientos desde libro_mayor.txt
-            JOptionPane.showMessageDialog(this, "Libro mayor actualizado desde archivo TXT.");
+            txtFechaInicio.setText("");
+            txtFechaFin.setText("");
+            cbCuentaContable.setSelectedIndex(0);
+            cargarDatos();
+            JOptionPane.showMessageDialog(this, "Libro mayor actualizado desde la base de datos.");
         });
+    }
+
+    /**
+     * Carga y filtra los datos del Libro Mayor usando LibroMayorDAO
+     * Modificado: 2026-06-25T23:15:00-05:00
+     */
+    private void cargarDatos() {
+        LibroMayorDAO dao = new LibroMayorDAO();
+        List<LibroMayor> lista = dao.listarTodos();
+
+        String cuentaSel = cbCuentaContable.getSelectedItem().toString();
+        String fechaIni = txtFechaInicio.getText().trim();
+        String fechaFin = txtFechaFin.getText().trim();
+
+        // Limpiar tabla
+        modelAsientos.setRowCount(0);
+        // CORRECCIÓN: acumuladores BigDecimal (2026-06-26 — Auditoría ERP)
+        java.math.BigDecimal totalDebe  = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal totalHaber = java.math.BigDecimal.ZERO;
+
+        for (LibroMayor lm : lista) {
+            boolean pasaFiltro = true;
+
+            // Filtro por cuenta contable
+            if (cbCuentaContable.getSelectedIndex() > 0) {
+                // Si seleccionó una cuenta específica, extraemos el código (ej. "Efectivo (101)" -> "101")
+                // Por simplicidad, chequearemos si cuentaDebe o cuentaHaber contiene la selección
+                if (!lm.getCuentaDebe().contains(cuentaSel) && !lm.getCuentaHaber().contains(cuentaSel)) {
+                    pasaFiltro = false;
+                }
+            }
+
+            // Filtro por fecha (simple coincidencia por ahora)
+            if (!fechaIni.isEmpty() && lm.getFecha().compareTo(fechaIni) < 0) pasaFiltro = false;
+            if (!fechaFin.isEmpty() && lm.getFecha().compareTo(fechaFin) > 0) pasaFiltro = false;
+
+            if (pasaFiltro) {
+                java.math.BigDecimal debe  = lm.getMontoDebe()  != null ? lm.getMontoDebe()  : java.math.BigDecimal.ZERO;
+                java.math.BigDecimal haber = lm.getMontoHaber() != null ? lm.getMontoHaber() : java.math.BigDecimal.ZERO;
+                modelAsientos.addRow(new Object[]{
+                    lm.getFecha(),
+                    lm.getGlosa(),
+                    lm.getCuentaDebe(),
+                    lm.getCuentaHaber(),
+                    // CORRECCIÓN: toPlainString() para BigDecimal
+                    debe.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
+                    haber.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString(),
+                    lm.getNroAsiento()
+                });
+                totalDebe  = totalDebe.add(debe);
+                totalHaber = totalHaber.add(haber);
+            }
+        }
+
+        java.math.BigDecimal diferencia = totalDebe.subtract(totalHaber).abs();
+        lblDebeTotal.setText("S/ " + totalDebe.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        lblHaberTotal.setText("S/ " + totalHaber.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
+        lblSaldoActual.setText("S/ " + diferencia.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
     }
 }

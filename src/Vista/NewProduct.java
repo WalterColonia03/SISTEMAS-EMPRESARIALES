@@ -2,8 +2,8 @@ package Vista;
 
 import Clases.Categoria;
 import Clases.Producto;
-import ArchivosTXT.ArchivoCategoriaTXT;
-import ArchivosTXT.ArchivoProductoTXT;
+import Modelo.CategoriaDAO;
+import Modelo.ProductoDAO;
 import java.awt.Dimension;
 import java.util.List;
 import javax.swing.JOptionPane;
@@ -135,8 +135,8 @@ public class NewProduct extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_txt_cantidadActionPerformed
 
     private void jButton_GuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_GuardarActionPerformed
-        ArchivoProductoTXT archivo = new ArchivoProductoTXT();
-        List<Producto> lista = archivo.leer();
+        ProductoDAO dao = new ProductoDAO();
+        List<Producto> lista = dao.listarTodos();
 
         String nombre = txt_nombre.getText().trim();
         String cantidadTexto = txt_cantidad.getText().trim();
@@ -155,8 +155,8 @@ public class NewProduct extends javax.swing.JInternalFrame {
         }
 
         int cantidad = Integer.parseInt(cantidadTexto);
-        double precio = Double.parseDouble(precioTexto);
-        
+
+
         //Valida productos repetidos
         for (Producto p : lista) {
 
@@ -173,22 +173,16 @@ public class NewProduct extends javax.swing.JInternalFrame {
         // Finalmente se convierte el ID (que es texto) a número entero
         String seleccion = jComboBox_categoria.getSelectedItem().toString();
         int idCategoria = Integer.parseInt(seleccion.split("-")[0]);
+        // CORRECCIÓN: BigDecimal para precio (el constructor de Producto lo exige)
+        // (2026-06-26 — Auditoría ERP)
+        java.math.BigDecimal precio = new java.math.BigDecimal(precioTexto.replace(",", "."));
 
         //GENERA UN ID PARA EL PRODUCTO QUE SE INGRESE
-        // Se inicializa el ID en 1 por si la lista está vacía
-        // Luego se recorre la lista de productos existentes
-        // Se busca el ID más alto y se le suma 1 para evitar duplicados
-        int nuevoId = 1;
-        for (Producto p : lista) {
-            if (p.getIdProducto() >= nuevoId) {
-                nuevoId = p.getIdProducto() + 1;
-            }
-        }
+        int nuevoId = dao.generarId();
 
         Producto nuevo = new Producto(nuevoId, nombre, cantidad, precio, descripcion, idCategoria, 1);
 
-        lista.add(nuevo);
-        archivo.guardar(lista);
+        dao.guardar(nuevo);
 
         JOptionPane.showMessageDialog(this, "Producto guardado correctamente");
 
@@ -252,8 +246,8 @@ public class NewProduct extends javax.swing.JInternalFrame {
 
     public void cargarCategorias() {
 
-        ArchivoCategoriaTXT archivo = new ArchivoCategoriaTXT();
-        List<Categoria> lista = archivo.leer();
+        CategoriaDAO dao = new CategoriaDAO();
+        List<Categoria> lista = dao.listarTodos();
 
         jComboBox_categoria.removeAllItems();
         jComboBox_categoria.addItem("Seleccione categoria");

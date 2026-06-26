@@ -1,10 +1,15 @@
 package Vista;
 
+import Clases.Proveedor;
+import Modelo.ApisPeruService;
+import Modelo.ProveedorDAO;
 import Vista.Estilos.UIKit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.List;
 import java.awt.*;
 
 public class IFrmGestionProveedores extends JInternalFrame {
@@ -202,17 +207,129 @@ public class IFrmGestionProveedores extends JInternalFrame {
         getContentPane().add(cuerpo, BorderLayout.CENTER);
     }
 
+    private void cargarTabla() {
+        ProveedorDAO dao = new ProveedorDAO();
+        List<Proveedor> lista = dao.listarTodos();
+        modelProveedores.setRowCount(0);
+        for (Proveedor p : lista) {
+            modelProveedores.addRow(new Object[]{
+                p.getIdProveedor(),
+                p.getRuc(),
+                p.getRazonSocial(),
+                p.getContacto(),
+                p.getTelefono(),
+                p.getCorreo(),
+                p.getDireccion(),
+                p.getEstado() == 1 ? "Activo" : "Inactivo"
+            });
+        }
+    }
+
     private void attachEvents() {
+        cargarTabla();
+
+        // Integración API SUNAT: Autocompletar al salir del campo RUC
+        // Creado/Modificado: 2026-06-25T23:25:00-05:00
+        txtRuc.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                String ruc = txtRuc.getText().trim();
+                if (ruc.length() == 11 && txtRazonSocial.getText().trim().isEmpty()) {
+                    txtRazonSocial.setText("Consultando SUNAT...");
+                    SwingUtilities.invokeLater(() -> {
+                        String[] datos = ApisPeruService.consultarRUC(ruc);
+                        if (datos != null) {
+                            txtRazonSocial.setText(datos[0]); // razonSocial
+                            txtDireccion.setText(datos[1]); // direccion
+                            if ("ACTIVO".equalsIgnoreCase(datos[2])) {
+                                cbEstado.setSelectedIndex(0);
+                            } else {
+                                cbEstado.setSelectedIndex(1);
+                            }
+                        } else {
+                            txtRazonSocial.setText("");
+                            JOptionPane.showMessageDialog(IFrmGestionProveedores.this, "RUC no encontrado en SUNAT o error de conexión.");
+                        }
+                    });
+                }
+            }
+        });
+
         btnBuscar.addActionListener(e -> {
-            // TODO: lógica TXT
+            String ruc = txtBuscarRuc.getText().trim();
+            if (ruc.isEmpty()) {
+                cargarTabla();
+                return;
+            }
+            ProveedorDAO dao = new ProveedorDAO();
+            Proveedor p = dao.buscarPorRuc(ruc);
+            modelProveedores.setRowCount(0);
+            if (p != null) {
+                modelProveedores.addRow(new Object[]{
+                    p.getIdProveedor(), p.getRuc(), p.getRazonSocial(), p.getContacto(),
+                    p.getTelefono(), p.getCorreo(), p.getDireccion(), p.getEstado() == 1 ? "Activo" : "Inactivo"
+                });
+            } else {
+                JOptionPane.showMessageDialog(this, "Proveedor no encontrado");
+            }
         });
 
         btnGuardar.addActionListener(e -> {
-            // TODO: lógica TXT
+            String ruc = txtRuc.getText().trim();
+            String razon = txtRazonSocial.getText().trim();
+            if (ruc.isEmpty() || razon.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "RUC y Razón Social son obligatorios");
+                return;
+            }
+            if (ruc.length() != 11 || (!ruc.startsWith("10") && !ruc.startsWith("20"))) {
+                JOptionPane.showMessageDialog(this, "RUC inválido (Debe tener 11 dígitos y empezar con 10 o 20)");
+                return;
+            }
+            
+            Proveedor p = new Proveedor();
+            p.setRuc(ruc);
+            p.setRazonSocial(razon);
+            p.setContacto(txtContacto.getText().trim());
+            p.setTelefono(txtTelefono.getText().trim());
+            p.setCorreo(txtCorreo.getText().trim());
+            p.setDireccion(txtDireccion.getText().trim());
+            p.setEstado(cbEstado.getSelectedIndex() == 0 ? 1 : 0);
+
+            ProveedorDAO dao = new ProveedorDAO();
+            if (txtId.getText().isEmpty()) {
+                if (dao.guardar(p)) {
+                    JOptionPane.showMessageDialog(this, "Proveedor registrado exitosamente");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al registrar (El RUC podría estar duplicado)");
+                }
+            } else {
+                p.setIdProveedor(Integer.parseInt(txtId.getText()));
+                if (dao.actualizar(p)) {
+                    JOptionPane.showMessageDialog(this, "Proveedor actualizado exitosamente");
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al actualizar");
+                }
+            }
+            btnLimpiar.doClick();
+            cargarTabla();
         });
 
         btnEliminar.addActionListener(e -> {
-            // TODO: lógica TXT
+            if (txtId.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Seleccione un proveedor para eliminar");
+                return;
+            }
+            int opt = JOptionPane.showConfirmDialog(this, "¿Está seguro de eliminar este proveedor?", "Confirmar", JOptionPane.YES_NO_OPTION);
+            if (opt == JOptionPane.YES_OPTION) {
+                ProveedorDAO dao = new ProveedorDAO();
+                if (dao.eliminar(Integer.parseInt(txtId.getText()))) {
+                    JOptionPane.showMessageDialog(this, "Proveedor eliminado");
+                    btnLimpiar.doClick();
+                    cargarTabla();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al eliminar");
+                }
+            }
         });
 
         btnLimpiar.addActionListener(e -> {

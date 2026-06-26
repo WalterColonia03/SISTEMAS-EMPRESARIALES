@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Venta;
-import ArchivosTXT.ArchivoVentaTXT;
+import Modelo.VentaDAO;
 import java.awt.Dimension;
 import java.util.List;
 //import javax.swing.Icon;
@@ -177,9 +177,8 @@ public class GestionarVentas extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoVentaTXT archivo = new ArchivoVentaTXT();
-
-        List<Venta> lista = archivo.leer();
+        VentaDAO dao = new VentaDAO();
+        List<Venta> lista = dao.listarTodos();
 
         int idVenta = Integer.parseInt(
                 jTable_ventas.getValueAt(fila, 0).toString());
@@ -192,12 +191,10 @@ public class GestionarVentas extends javax.swing.JInternalFrame {
             if (v.getIdVenta() == idVenta) {
 
                 v.setCliente(nuevoCliente);
-
+                dao.actualizar(v);
                 break;
             }
         }
-
-        archivo.guardar(lista);
 
         JOptionPane.showMessageDialog(this,
                 "Cliente actualizado correctamente");
@@ -262,9 +259,8 @@ public class GestionarVentas extends javax.swing.JInternalFrame {
             }
         };
 
-        ArchivoVentaTXT archivo = new ArchivoVentaTXT();
-
-        List<Venta> lista = archivo.leer();
+        VentaDAO dao = new VentaDAO();
+        List<Venta> lista = dao.listarTodos();
 
         Object[] fila = new Object[4];
 
@@ -283,9 +279,8 @@ public class GestionarVentas extends javax.swing.JInternalFrame {
 
     public void cargarClientes() {
 
-        ArchivoVentaTXT archivo = new ArchivoVentaTXT();
-
-        List<Venta> lista = archivo.leer();
+        VentaDAO dao = new VentaDAO();
+        List<Venta> lista = dao.listarTodos();
 
         jComboBox_cliente.removeAllItems();
 

@@ -1,11 +1,24 @@
 package Vista;
 
+import Clases.Compra;
+import Clases.DetalleCompra;
+import Clases.Producto;
+import Clases.Proveedor;
+import Modelo.CompraDAO;
+import Modelo.ProductoDAO;
+import Modelo.ProveedorDAO;
 import Vista.Estilos.UIKit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.List;
+// CORRECCIÓN: import java.awt.* duplicado eliminado (2026-06-26 — Auditoría ERP)
 
 public class IFrmRegistroCompras extends JInternalFrame {
 
@@ -41,7 +54,14 @@ public class IFrmRegistroCompras extends JInternalFrame {
     }
 
     private void initComponents() {
-        cbProveedor = new JComboBox<>(new String[]{"Seleccione proveedor", "Distribuidora del Sur", "Grupo Alimenticio SAC", "Corporación Norte"});
+        cbProveedor = new JComboBox<>();
+        cbProveedor.addItem("Seleccione proveedor");
+        ProveedorDAO pdao = new ProveedorDAO();
+        for (Proveedor p : pdao.listarTodos()) {
+            if (p.getEstado() == 1) {
+                cbProveedor.addItem(p.getIdProveedor() + " - " + p.getRazonSocial());
+            }
+        }
         cbProveedor.setFont(UIKit.BODY);
         
         txtDocumento = UIKit.textField();
@@ -252,8 +272,65 @@ public class IFrmRegistroCompras extends JInternalFrame {
     }
 
     private void attachEvents() {
+        // Buscar producto por ID
+        txtCodProducto.addActionListener(e -> {
+            String cod = txtCodProducto.getText().trim();
+            if (cod.isEmpty()) return;
+            try {
+                int id = Integer.parseInt(cod);
+                ProductoDAO dao = new ProductoDAO();
+                Producto p = null;
+                for (Producto prod : dao.listarTodos()) {
+                    if (prod.getIdProducto() == id) {
+                        p = prod;
+                        break;
+                    }
+                }
+                if (p != null) {
+                    txtProductoNombre.setText(p.getNombre());
+                    txtPrecioUnitario.setText(String.valueOf(p.getPrecio()));
+                    txtCantidad.requestFocus();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Producto no encontrado");
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Código inválido");
+            }
+        });
+
         btnAgregarProducto.addActionListener(e -> {
-            // TODO: lógica TXT
+            if (txtCodProducto.getText().isEmpty() || txtProductoNombre.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Debe buscar un producto primero");
+                return;
+            }
+            try {
+                int cant = Integer.parseInt(txtCantidad.getText().trim());
+                // CORRECCIÓN: BigDecimal para evitar errores de coma flotante en precios de compra
+                BigDecimal precio    = new BigDecimal(txtPrecioUnitario.getText().trim().replace(",", "."));
+                BigDecimal subtotal  = precio.multiply(new BigDecimal(cant)).setScale(2, RoundingMode.HALF_UP);
+                
+                modelDetalle.addRow(new Object[]{
+                    txtCodProducto.getText(),
+                    txtProductoNombre.getText(),
+                    cant,
+                    "S/ " + precio.toPlainString(),
+                    "S/ " + subtotal.toPlainString(),
+                    txtLote.getText(),
+                    txtVencimiento.getText()
+                });
+                
+                txtCodProducto.setText("");
+                txtProductoNombre.setText("");
+                txtCantidad.setText("1");
+                txtPrecioUnitario.setText("");
+                txtLote.setText("");
+                txtVencimiento.setText("");
+                txtCodProducto.requestFocus();
+                
+                recalcularTotales();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Ingrese valores numéricos válidos en Cantidad y Precio");
+            }
         });
 
         btnQuitarProducto.addActionListener(e -> {
@@ -265,13 +342,58 @@ public class IFrmRegistroCompras extends JInternalFrame {
         });
 
         btnRegistrarCompra.addActionListener(e -> {
-            // TODO: lógica TXT
+            if (cbProveedor.getSelectedIndex() <= 0) {
+                JOptionPane.showMessageDialog(this, "Seleccione un proveedor");
+                return;
+            }
+            if (modelDetalle.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "Debe agregar al menos un producto al detalle");
+                return;
+            }
+            
+            try {
+                Compra compra = new Compra();
+                String provStr = cbProveedor.getSelectedItem().toString();
+                compra.setIdProveedor(Integer.parseInt(provStr.split(" - ")[0]));
+                
+                String fecha = txtFecha.getText().trim();
+                if (fecha.isEmpty()) {
+                    fecha = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
+                }
+                compra.setFecha(fecha);
+                
+                // CORRECCIÓN: total como BigDecimal
+                BigDecimal total = new BigDecimal(lblTotal.getText().replace("S/ ", "").replace(",", "."));
+                compra.setTotal(total);
+                
+                for (int i = 0; i < modelDetalle.getRowCount(); i++) {
+                    DetalleCompra d = new DetalleCompra();
+                    d.setIdProducto(Integer.parseInt(modelDetalle.getValueAt(i, 0).toString()));
+                    d.setCantidad(Integer.parseInt(modelDetalle.getValueAt(i, 2).toString()));
+                    String precioStr = modelDetalle.getValueAt(i, 3).toString().replace("S/ ", "").replace(",", ".");
+                    // CORRECCIÓN: precio unitario como BigDecimal
+                    d.setPrecioUnitario(new BigDecimal(precioStr));
+                    compra.getDetalles().add(d);
+                }
+                
+                CompraDAO dao = new CompraDAO();
+                if (dao.registrarCompra(compra)) {
+                    JOptionPane.showMessageDialog(this, "Compra registrada y stock actualizado con éxito.");
+                    btnLimpiar.doClick();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al registrar la compra en la base de datos.");
+                }
+                
+            } catch (Exception ex) {
+                Utils.LoggerGlobal.error("IFrmRegistroCompras.registrar() falló", ex); // CORRECCIÓN
+                JOptionPane.showMessageDialog(this, "Error al procesar los datos de la compra: " + ex.getMessage());
+            }
         });
 
         btnLimpiar.addActionListener(e -> {
             cbProveedor.setSelectedIndex(0);
             txtDocumento.setText("");
-            txtFecha.setText("");
+            txtFecha.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
             txtCodProducto.setText("");
             txtProductoNombre.setText("");
             txtCantidad.setText("1");
@@ -281,17 +403,25 @@ public class IFrmRegistroCompras extends JInternalFrame {
             modelDetalle.setRowCount(0);
             recalcularTotales();
         });
+        
+        txtFecha.setText(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
     }
 
+    /**
+     * Recalcula subtotal, IGV (18%) y total usando BigDecimal para precisión exacta.
+     * CORRECCIÓN: Migrado de double a BigDecimal (2026-06-26 — Auditoría ERP)
+     */
     private void recalcularTotales() {
-        double subtotal = 0;
+        BigDecimal subtotal = BigDecimal.ZERO;
         for (int i = 0; i < modelDetalle.getRowCount(); i++) {
-            subtotal += Double.parseDouble(modelDetalle.getValueAt(i, 4).toString().replace("S/ ", ""));
+            String val = modelDetalle.getValueAt(i, 4).toString().replace("S/ ", "").replace(",", ".");
+            subtotal = subtotal.add(new BigDecimal(val));
         }
-        double igv = subtotal * 0.18;
-        double total = subtotal + igv;
-        lblSubtotal.setText(String.format("S/ %.2f", subtotal));
-        lblIgv.setText(String.format("S/ %.2f", igv));
-        lblTotal.setText(String.format("S/ %.2f", total));
+        BigDecimal igv   = subtotal.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = subtotal.add(igv).setScale(2, RoundingMode.HALF_UP);
+        subtotal         = subtotal.setScale(2, RoundingMode.HALF_UP);
+        lblSubtotal.setText("S/ " + subtotal.toPlainString());
+        lblIgv.setText("S/ " + igv.toPlainString());
+        lblTotal.setText("S/ " + total.toPlainString());
     }
 }

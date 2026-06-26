@@ -85,10 +85,9 @@ public class ArchivoProductoTXT {
                             Integer.parseInt(d[0]), // id
                             d[1], // nombre
                             Integer.parseInt(d[2]), // cantidad
-                            Double.parseDouble(d[3]),// precio
+                            new java.math.BigDecimal(d[3].replace(",", ".")), // CORRECCIÓN: precio como BigDecimal
                             d[4], // descripcion
                             Integer.parseInt(d[5]), // idCategoria
-                            //Integer.parseInt(d[6]),  
                             Integer.parseInt(d[6]) // estado
                     );
 

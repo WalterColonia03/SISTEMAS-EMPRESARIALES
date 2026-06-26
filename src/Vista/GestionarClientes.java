@@ -1,7 +1,7 @@
 package Vista;
 
 import Clases.Cliente;
-import ArchivosTXT.ArchivoClienteTXT;
+import Modelo.ClienteDAO;
 import java.awt.Dimension;
 import java.util.List;
 import javax.swing.Icon;
@@ -219,32 +219,20 @@ public class GestionarClientes extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoClienteTXT archivo = new ArchivoClienteTXT();
-        List<Cliente> lista = archivo.leer();
+        ClienteDAO dao = new ClienteDAO();
+        List<Cliente> lista = dao.listarTodos();
 
         int id = Integer.parseInt(jTable_clientes.getValueAt(fila, 0).toString());
 
         for (Cliente c : lista) {
-
             if (c.getDni().equals(dni) && c.getIdCliente() != id) {
-
                 JOptionPane.showMessageDialog(this, "El DNI ya está registrado");
                 return;
             }
         }
 
-        for (Cliente c : lista) {
-            if (c.getIdCliente() == id) {
-                c.setNombre(nombre);
-                c.setApellido(apellido);
-                c.setDni(dni);
-                c.setTelefono(telefono);
-                c.setDireccion(direccion);
-                break;
-            }
-        }
-
-        archivo.guardar(lista);
+        Cliente clienteActualizado = new Cliente(id, nombre, apellido, dni, telefono, direccion, 1);
+        dao.actualizar(clienteActualizado);
 
         JOptionPane.showMessageDialog(this, "Cliente actualizado");
 
@@ -274,14 +262,10 @@ public class GestionarClientes extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoClienteTXT archivo = new ArchivoClienteTXT();
-        List<Cliente> lista = archivo.leer();
-
+        ClienteDAO dao = new ClienteDAO();
         int id = Integer.parseInt(jTable_clientes.getValueAt(fila, 0).toString());
 
-        lista.removeIf(c -> c.getIdCliente() == id);
-
-        archivo.guardar(lista);
+        dao.eliminar(id);
 
         JOptionPane.showMessageDialog(this, "Cliente eliminado");
 
@@ -366,8 +350,8 @@ public class GestionarClientes extends javax.swing.JInternalFrame {
 
     public void cargarTabla() {
 
-        ArchivoClienteTXT archivo = new ArchivoClienteTXT();
-        List<Cliente> lista = archivo.leer();
+        ClienteDAO dao = new ClienteDAO();
+        List<Cliente> lista = dao.listarTodos();
 
         DefaultTableModel modelo = new DefaultTableModel() {
             @Override

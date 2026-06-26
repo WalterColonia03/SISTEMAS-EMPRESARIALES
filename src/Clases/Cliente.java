@@ -13,6 +13,10 @@ public class Cliente {
     private String telefono;
     private String direccion;
     private int estado;
+    private int puntos;
+
+    public Cliente() {
+    }
 
     public Cliente(int idCliente, String nombre, String apellido, String dni, String telefono, String direccion, int estado) {
         this.idCliente = idCliente;
@@ -80,4 +84,11 @@ public class Cliente {
         this.estado = estado;
     }
  
+    public int getPuntos() {
+        return puntos;
+    }
+
+    public void setPuntos(int puntos) {
+        this.puntos = puntos;
+    }
 }

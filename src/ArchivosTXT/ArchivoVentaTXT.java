@@ -77,7 +77,7 @@ public class ArchivoVentaTXT {
 
                 v.setIdVenta(Integer.parseInt(datos[0]));
                 v.setCliente(datos[1]);
-                v.setTotal(Double.parseDouble(datos[2]));
+                v.setTotal(new java.math.BigDecimal(datos[2].replace(",", "."))); // CORRECCIÓN: era Double.parseDouble
                 v.setFecha(datos[3]);
 
                 lista.add(v);

@@ -1,7 +1,8 @@
 package Vista;
 
 import Clases.Usuario;
-import ArchivosTXT.ArchivoUsuarioTXT;
+import Modelo.UsuarioDAO;
+import Utils.PasswordUtils;          // CORRECCIÓN OWASP A02: para hash de contraseñas
 import java.awt.Dimension;
 import java.util.List;
 import javax.swing.Icon;
@@ -205,8 +206,8 @@ public class GestionarUsuarios extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoUsuarioTXT archivo = new ArchivoUsuarioTXT();
-        List<Usuario> lista = archivo.leer();
+        UsuarioDAO dao = new UsuarioDAO();
+        List<Usuario> lista = dao.listarTodos();
 
         String nombre = txt_nombre.getText().trim();
         String apellido = txt_apellido.getText().trim();
@@ -247,15 +248,16 @@ public class GestionarUsuarios extends javax.swing.JInternalFrame {
                 u.setNombre(nombre);
                 u.setApellido(apellido);
                 u.setUsuario(usuario);
-                u.setPassword(password);
+                // CORRECCIÓN OWASP A02: hashear contraseña con SHA-256 antes de persistir
+                // (2026-06-26 — Auditoría ERP)
+                u.setPassword(PasswordUtils.hashPassword(password));
                 u.setTelefono(telefono);
                 u.setRol(rol);
+                dao.actualizar(u);
 
                 break;
             }
         }
-
-        archivo.guardar(lista);
 
         JOptionPane.showMessageDialog(this,
                 "Usuario actualizado");
@@ -272,14 +274,10 @@ public class GestionarUsuarios extends javax.swing.JInternalFrame {
             return;
         }
 
-        ArchivoUsuarioTXT archivo = new ArchivoUsuarioTXT();
-        List<Usuario> lista = archivo.leer();
-
+        UsuarioDAO dao = new UsuarioDAO();
         int id = Integer.parseInt(jTable_usuarios.getValueAt(fila, 0).toString());
 
-        lista.removeIf(u -> u.getIdUsuario() == id);
-
-        archivo.guardar(lista);
+        dao.eliminar(id);
 
         JOptionPane.showMessageDialog(this, "Usuario eliminado");
 
@@ -359,8 +357,8 @@ public class GestionarUsuarios extends javax.swing.JInternalFrame {
             }
         };
 
-        ArchivoUsuarioTXT archivo = new ArchivoUsuarioTXT();
-        List<Usuario> lista = archivo.leer();
+        UsuarioDAO dao = new UsuarioDAO();
+        List<Usuario> lista = dao.listarTodos();
 
         Object[] fila = new Object[8];
 

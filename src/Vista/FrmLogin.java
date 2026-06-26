@@ -6,8 +6,16 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import Clases.Bitacora;
 import Clases.Usuario;
-import ArchivosTXT.ArchivoUsuarioTXT;
+import Modelo.BitacoraDAO;
+import Modelo.UsuarioDAO;
+import Utils.LoggerGlobal;
+import Utils.PasswordUtils;         // CORREGIDO: importado para verificación segura de contraseñas
 import Vista.Estilos.UIKit;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.FlatClientProperties;
@@ -24,6 +32,12 @@ public class FrmLogin extends JFrame {
     
     // Variables para arrastrar ventana undecorated
     private int mouseX, mouseY;
+
+    // Seguridad: FR-039 Bloqueo de cuenta
+    private static Map<String, Integer> intentosFallidos = new HashMap<>();
+    private static Map<String, Long> tiempoBloqueo = new HashMap<>();
+    private static final int MAX_INTENTOS = 3;
+    private static final long TIEMPO_BLOQUEO_MS = 15 * 60 * 1000; // 15 minutos
 
     public FrmLogin() {
         super("ERP Minimarket LAREDO");
@@ -181,21 +195,51 @@ public class FrmLogin extends JFrame {
         });
 
         btnIngresar.addActionListener(e -> {
+            String user = txtUsuario.getText().trim();
+            if (user.isEmpty()) return;
+
+            // Verificar si el usuario está bloqueado
+            if (tiempoBloqueo.containsKey(user)) {
+                long bloqueadoHasta = tiempoBloqueo.get(user);
+                long restante = bloqueadoHasta - System.currentTimeMillis();
+                if (restante > 0) {
+                    long minutos = restante / (60 * 1000);
+                    JOptionPane.showMessageDialog(this, "Cuenta bloqueada por seguridad. Intente en " + (minutos + 1) + " minutos.");
+                    LoggerGlobal.log("Intento de login bloqueado para usuario: " + user);
+                    return;
+                } else {
+                    // Desbloquear si ya pasó el tiempo
+                    tiempoBloqueo.remove(user);
+                    intentosFallidos.put(user, 0);
+                }
+            }
+
             btnIngresar.setEnabled(false);
             btnIngresar.setText("Ingresando...");
             
             SwingUtilities.invokeLater(() -> {
-                String user = txtUsuario.getText();
                 String pass = new String(txtPassword.getPassword());
 
-                ArchivoUsuarioTXT archivo = new ArchivoUsuarioTXT();
-                List<Usuario> lista = archivo.leer();
+                UsuarioDAO dao = new UsuarioDAO();
+                List<Usuario> lista = dao.listarTodos();
 
                 boolean encontrado = false;
 
                 for (Usuario u : lista) {
-                    if (u.getUsuario().equals(user) && u.getPassword().equals(pass)) {
+                    // CORRECCIÓN OWASP A02: comparación con hash SHA-256, no texto plano
+                    if (u.getUsuario().equals(user) && PasswordUtils.verifyPassword(pass, u.getPassword())) {
                         encontrado = true;
+
+                        // FR-020-v2 CA-1: registrar login exitoso en bitácora
+                        intentosFallidos.put(user, 0);
+                        Utils.BitacoraService.registrar(
+                            user,
+                            Utils.BitacoraService.MOD_LOGIN,
+                            "LOGIN_EXITOSO",
+                            Utils.BitacoraService.OK,
+                            "Rol: " + u.getRol()
+                        );
+
                         Clases.Sesion.setRol(u.getRol());
                         Clases.Sesion.setUsuario(u.getUsuario());
                         JOptionPane.showMessageDialog(this, "Bienvenido " + u.getNombre() + " - " + u.getRol());
@@ -207,7 +251,34 @@ public class FrmLogin extends JFrame {
                 }
 
                 if (!encontrado) {
-                    JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos");
+                    int intentos = intentosFallidos.getOrDefault(user, 0) + 1;
+                    intentosFallidos.put(user, intentos);
+
+                    if (intentos >= MAX_INTENTOS) {
+                        tiempoBloqueo.put(user, System.currentTimeMillis() + TIEMPO_BLOQUEO_MS);
+                        // FR-020-v2 CA-2: registrar bloqueo por intentos fallidos
+                        Utils.BitacoraService.registrar(
+                            user,
+                            Utils.BitacoraService.MOD_LOGIN,
+                            "CUENTA_BLOQUEADA",
+                            Utils.BitacoraService.FALLO,
+                            "Bloqueada tras " + MAX_INTENTOS + " intentos"
+                        );
+                        JOptionPane.showMessageDialog(this,
+                            "Usuario o contraseña incorrectos.\nCUENTA BLOQUEADA por 15 minutos.");
+                    } else {
+                        // FR-020-v2 CA-2: registrar intento fallido
+                        Utils.BitacoraService.registrar(
+                            user,
+                            Utils.BitacoraService.MOD_LOGIN,
+                            "LOGIN_INTENTO",
+                            Utils.BitacoraService.FALLO,
+                            "Intento " + intentos + " de " + MAX_INTENTOS
+                        );
+                        JOptionPane.showMessageDialog(this,
+                            "Usuario o contraseña incorrectos.\nIntentos restantes: " + (MAX_INTENTOS - intentos));
+                    }
+
                     btnIngresar.setEnabled(true);
                     btnIngresar.setText("Ingresar");
                 }
