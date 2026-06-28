@@ -82,13 +82,13 @@ public class IFrmFlujoCaja extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Flujo de Caja", "Finanzas  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âº  Flujo de Caja"),
+                UIKit.screenHeader("Flujo de Caja", "Finanzas  >  Flujo de Caja"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
         cuerpo.setOpaque(false);
 
-        // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Panel Superior: Tarjetas KPI y Tipo de Cambio ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
+        // ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â€šÂ¬ÂÂÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â€šÂ¬ÂÂÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬ Panel Superior: Tarjetas KPI y Tipo de Cambio ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â€šÂ¬ÂÂÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â€šÂ¬ÂÂÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬
         JPanel pnlSuperior = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
         pnlSuperior.setOpaque(false);
 
@@ -165,7 +165,7 @@ public class IFrmFlujoCaja extends JInternalFrame {
 
         cuerpo.add(pnlSuperior, BorderLayout.NORTH);
 
-        // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ Panel Central: Tabla de Movimientos ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
+        // ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â€šÂ¬ÂÂÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â€šÂ¬ÂÂÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬ Panel Central: Tabla de Movimientos ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â€šÂ¬ÂÂÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â€šÂ¬ÂÂÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬
         JPanel pnlCentral = UIKit.card();
         pnlCentral.setLayout(new BorderLayout(0, UIKit.SPACE_MD));
         
@@ -190,7 +190,7 @@ public class IFrmFlujoCaja extends JInternalFrame {
         pnlAcciones.add(pnlFiltros, BorderLayout.WEST);
         pnlAcciones.add(pnlBotonesTabla, BorderLayout.EAST);
 
-        pnlCentral.add(UIKit.sectionHeader("Movimientos del PerÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­odo", null), BorderLayout.NORTH);
+        pnlCentral.add(UIKit.sectionHeader("Movimientos del PerÃƒÆ’Ã†â€™Ãƒâ€šÂÂ­odo", null), BorderLayout.NORTH);
         
         JPanel pnlInner = new JPanel(new BorderLayout(0, UIKit.SPACE_SM));
         pnlInner.setOpaque(false);
@@ -248,17 +248,17 @@ public class IFrmFlujoCaja extends JInternalFrame {
                 f.setFecha(new SimpleDateFormat("dd/MM/yyyy").format(new Date()));
                 f.setTipo(tipo);
                 f.setConcepto(txtConcepto.getText());
-                // CORRECCIÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œN: BigDecimal en vez de double para precisiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n financiera
+                // CORRECCIÃ“N: BigDecimal en vez de double para precisiÃƒÆ’Ã†â€™Ãƒâ€šÂÂ³n financiera
                 f.setMonto(new java.math.BigDecimal(txtMonto.getText().replace(",", ".")));
 
                 FlujoCajaDAO dao = new FlujoCajaDAO();
                 dao.guardar(f);
                 cargarFlujo();
             } catch (NumberFormatException nfe) {
-                Utils.LoggerGlobal.error("IFrmFlujoCaja: monto invÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡lido", nfe);
-                JOptionPane.showMessageDialog(this, "Error: ingrese un monto numÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rico vÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡lido (ej: 150.50)");
+                Utils.LoggerGlobal.error("IFrmFlujoCaja: monto invÃƒÆ’Ã†â€™Ãƒâ€šÂÂ¡lido", nfe);
+                JOptionPane.showMessageDialog(this, "Error: ingrese un monto numÃƒÆ’Ã†â€™Ãƒâ€šÂÂ©rico vÃƒÆ’Ã†â€™Ãƒâ€šÂÂ¡lido (ej: 150.50)");
             } catch (Exception ex) {
-                Utils.LoggerGlobal.error("IFrmFlujoCaja.registrarMovimiento() fallÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³", ex);
+                Utils.LoggerGlobal.error("IFrmFlujoCaja.registrarMovimiento() fallÃƒÆ’Ã†â€™Ãƒâ€šÂÂ³", ex);
                 JOptionPane.showMessageDialog(this, "Error al registrar movimiento: " + ex.getMessage());
             }
         }
@@ -269,7 +269,7 @@ public class IFrmFlujoCaja extends JInternalFrame {
         List<FlujoCaja> lista = dao.listarTodos();
         modelMovimientos.setRowCount(0);
         
-        // CORRECCIÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œN: acumuladores BigDecimal (2026-06-26 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â AuditorÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­a ERP)
+        // CORRECCIÃ“N: acumuladores BigDecimal (2026-06-26 ÃƒÆ’ÂÂ¢ÃƒÂ¢Ã¢â‚¬Å¡ÂÂ¬ÃƒÂ¢Ã¢â€šÂ¬ÂÂ AuditorÃƒÆ’Ã†â€™Ãƒâ€šÂÂ­a ERP)
         java.math.BigDecimal totalIng = java.math.BigDecimal.ZERO;
         java.math.BigDecimal totalEgr = java.math.BigDecimal.ZERO;
 

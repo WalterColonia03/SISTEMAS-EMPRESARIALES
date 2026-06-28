@@ -12,12 +12,12 @@ import java.util.List;
 
 public class IFrmGestionCategorias extends JInternalFrame {
 
-    private JTable tblCategorias;
-    private DefaultTableModel modelCategorias;
+    private JTable tblCategorÃ­as;
+    private DefaultTableModel modelCategorÃ­as;
     private JTextField txtBuscar;
 
     private JTextField txtId;
-    private JTextField txtDescripcion; // Este es el "Nombre" de la categorÃ­a
+    private JTextField txtDescripcion; // Este es el "Nombre" de la categoría
     private JComboBox<String> cbEstado;
 
     private JButton btnBuscar;
@@ -26,7 +26,7 @@ public class IFrmGestionCategorias extends JInternalFrame {
     private JButton btnLimpiar;
 
     public IFrmGestionCategorias() {
-        super("GestiÃ³n de CategorÃ­as", true, true, true, true);
+        super("Gestión de Categorías", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
@@ -41,15 +41,15 @@ public class IFrmGestionCategorias extends JInternalFrame {
         
         btnBuscar = UIKit.secondaryButton("Buscar");
 
-        String[] columns = {"ID", "Nombre de CategorÃ­a", "Estado"};
-        modelCategorias = new DefaultTableModel(columns, 0) {
+        String[] columns = {"ID", "Nombre de Categoría", "Estado"};
+        modelCategorÃ­as = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
-        tblCategorias = UIKit.styledTable(modelCategorias);
+        tblCategorÃ­as = UIKit.styledTable(modelCategorÃ­as);
 
         txtId = UIKit.readOnlyField();
         txtDescripcion = UIKit.textField(); UIKit.addTextValidator(txtDescripcion, 100);
-        txtDescripcion.putClientProperty("JTextField.placeholderText", "Ej. Gaseosas, LÃ¡cteos...");
+        txtDescripcion.putClientProperty("JTextField.placeholderText", "Ej. Gaseosas, Lácteos...");
         
         cbEstado = new JComboBox<>(new String[]{"Activo", "Inactivo"});
         cbEstado.setFont(UIKit.BODY);
@@ -67,7 +67,7 @@ public class IFrmGestionCategorias extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("GestiÃ³n de CategorÃ­as", "Inventario  â€º  CategorÃ­as"),
+                UIKit.screenHeader("Gestión de Categorías", "Inventario  >  Categorías"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
@@ -82,9 +82,9 @@ public class IFrmGestionCategorias extends JInternalFrame {
         pnlBusqueda.add(txtBuscar);
         pnlBusqueda.add(btnBuscar);
         
-        pnlTabla.add(UIKit.sectionHeader("Listado de CategorÃ­as", pnlBusqueda), BorderLayout.NORTH);
+        pnlTabla.add(UIKit.sectionHeader("Listado de Categorías", pnlBusqueda), BorderLayout.NORTH);
         
-        JScrollPane scroll = new JScrollPane(tblCategorias);
+        JScrollPane scroll = new JScrollPane(tblCategorÃ­as);
         scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
         pnlTabla.add(scroll, BorderLayout.CENTER);
 
@@ -101,18 +101,18 @@ public class IFrmGestionCategorias extends JInternalFrame {
 
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlForm.add(UIKit.sectionHeader("Detalle de CategorÃ­a", null), gbc);
+        pnlForm.add(UIKit.sectionHeader("Detalle de Categoría", null), gbc);
 
         gbc.gridy = 1;
         gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlForm.add(UIKit.fieldLabel("ID CategorÃ­a"), gbc);
+        pnlForm.add(UIKit.fieldLabel("ID Categoría"), gbc);
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
         pnlForm.add(txtId, gbc);
 
         gbc.gridy = 3;
         gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlForm.add(UIKit.fieldLabel("Nombre de CategorÃ­a"), gbc);
+        pnlForm.add(UIKit.fieldLabel("Nombre de Categoría"), gbc);
         gbc.gridy = 4;
         gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
         pnlForm.add(txtDescripcion, gbc);
@@ -144,9 +144,9 @@ public class IFrmGestionCategorias extends JInternalFrame {
     private void cargarTabla() {
         CategoriaDAO dao = new CategoriaDAO();
         List<Categoria> lista = dao.listarTodos();
-        modelCategorias.setRowCount(0);
+        modelCategorÃ­as.setRowCount(0);
         for (Categoria c : lista) {
-            modelCategorias.addRow(new Object[]{
+            modelCategorÃ­as.addRow(new Object[]{
                 c.getIdCategoria(),
                 c.getDescripcion(),
                 c.getEstado() == 1 ? "Activo" : "Inactivo"
@@ -163,10 +163,10 @@ public class IFrmGestionCategorias extends JInternalFrame {
             }
             CategoriaDAO dao = new CategoriaDAO();
             List<Categoria> lista = dao.listarTodos();
-            modelCategorias.setRowCount(0);
+            modelCategorÃ­as.setRowCount(0);
             for (Categoria c : lista) {
                 if (c.getDescripcion().toLowerCase().contains(term)) {
-                    modelCategorias.addRow(new Object[]{
+                    modelCategorÃ­as.addRow(new Object[]{
                         c.getIdCategoria(),
                         c.getDescripcion(),
                         c.getEstado() == 1 ? "Activo" : "Inactivo"
@@ -178,7 +178,7 @@ public class IFrmGestionCategorias extends JInternalFrame {
         btnGuardar.addActionListener(e -> {
             String nombre = txtDescripcion.getText().trim();
             if (nombre.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "El nombre de la categorÃ­a es obligatorio.");
+                JOptionPane.showMessageDialog(this, "El nombre de la categoría es obligatorio.");
                 return;
             }
             
@@ -190,14 +190,14 @@ public class IFrmGestionCategorias extends JInternalFrame {
             if (txtId.getText().isEmpty()) {
                 c.setIdCategoria(dao.generarId());
                 if (dao.guardar(c)) {
-                    JOptionPane.showMessageDialog(this, "CategorÃ­a guardada con Ã©xito.");
+                    JOptionPane.showMessageDialog(this, "Categoría guardada con éxito.");
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al guardar.");
                 }
             } else {
                 c.setIdCategoria(Integer.parseInt(txtId.getText()));
                 if (dao.actualizar(c)) {
-                    JOptionPane.showMessageDialog(this, "CategorÃ­a actualizada con Ã©xito.");
+                    JOptionPane.showMessageDialog(this, "Categoría actualizada con éxito.");
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al actualizar.");
                 }
@@ -208,22 +208,22 @@ public class IFrmGestionCategorias extends JInternalFrame {
 
         btnEliminar.addActionListener(e -> {
             if (txtId.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Seleccione una categorÃ­a para eliminar/ocultar.");
+                JOptionPane.showMessageDialog(this, "Seleccione una categoría para eliminar/ocultar.");
                 return;
             }
             int opt = JOptionPane.showConfirmDialog(this, 
-                "Â¿EstÃ¡ seguro de ocultar/inactivar esta categorÃ­a?\n\nNota: Los productos y el historial de ventas vinculados a esta categorÃ­a NO se eliminarÃ¡n por motivos de auditorÃ­a.", 
-                "Confirmar AcciÃ³n", JOptionPane.YES_NO_OPTION);
+                "Â¿Está seguro de ocultar/inactivar esta categoría?\n\nNota: Los productos y el historial de ventas vinculados a esta categoría NO se eliminarán por motivos de auditoría.", 
+                "Confirmar Acción", JOptionPane.YES_NO_OPTION);
                 
             if (opt == JOptionPane.YES_OPTION) {
                 CategoriaDAO dao = new CategoriaDAO();
                 Categoria c = new Categoria(Integer.parseInt(txtId.getText()), txtDescripcion.getText(), 0);
                 if (dao.actualizar(c)) {
-                    JOptionPane.showMessageDialog(this, "CategorÃ­a ocultada/inactivada exitosamente.");
+                    JOptionPane.showMessageDialog(this, "Categoría ocultada/inactivada exitosamente.");
                     btnLimpiar.doClick();
                     cargarTabla();
                 } else {
-                    JOptionPane.showMessageDialog(this, "Error al inactivar la categorÃ­a.");
+                    JOptionPane.showMessageDialog(this, "Error al inactivar la categoría.");
                 }
             }
         });
@@ -234,12 +234,12 @@ public class IFrmGestionCategorias extends JInternalFrame {
             cbEstado.setSelectedIndex(0);
         });
 
-        tblCategorias.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tblCategorias.getSelectedRow() != -1) {
-                int row = tblCategorias.getSelectedRow();
-                txtId.setText(modelCategorias.getValueAt(row, 0).toString());
-                txtDescripcion.setText(modelCategorias.getValueAt(row, 1).toString());
-                String estado = modelCategorias.getValueAt(row, 2).toString();
+        tblCategorÃ­as.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && tblCategorÃ­as.getSelectedRow() != -1) {
+                int row = tblCategorÃ­as.getSelectedRow();
+                txtId.setText(modelCategorÃ­as.getValueAt(row, 0).toString());
+                txtDescripcion.setText(modelCategorÃ­as.getValueAt(row, 1).toString());
+                String estado = modelCategorÃ­as.getValueAt(row, 2).toString();
                 cbEstado.setSelectedItem(estado);
             }
         });

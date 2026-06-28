@@ -1,7 +1,7 @@
-1,Leche condensada,40,4.5,Leche evaporada tarro,4,1
-2,Queso Fresco,10,12.0,,4,1
-3,Arroz Costeño,94,5.2,Arroz extra superior,5,1
-4,Azucar Rubia,80,4.0,,5,1
+1,Leche condensada,40,4.5,Leche evaporada tarro,3,1
+2,Queso Fresco,10,12.0,,3,1
+3,Arroz Costeño,94,5.2,Arroz extra superior,1,1
+4,Azucar Rubia,80,4.0,,1,1
 5,Detergente Ariel,34,18.5,Detergente en polvo 2kg,6,1
 6,Lejia Sapolio,35,3.8,,6,1
 7,Nuggets de Pollo,20,14.9,Nuggets congelados bolsa,7,1

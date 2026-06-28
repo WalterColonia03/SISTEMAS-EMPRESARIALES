@@ -44,4 +44,63 @@ public class KardexDAO {
         }
         return lista;
     }
+
+    public List<Object[]> listarTodosDesc() {
+        List<Object[]> lista = new ArrayList<>();
+        String sql = "SELECT k.idMovimiento, p.nombre AS producto, k.tipoMovimiento, k.cantidad, k.fecha, k.motivo " +
+                     "FROM tb_kardex k " +
+                     "INNER JOIN tb_producto p ON k.idProducto = p.idProducto " +
+                     "ORDER BY k.idMovimiento DESC";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                lista.add(new Object[]{
+                    rs.getString("fecha"),
+                    rs.getString("producto"),
+                    rs.getString("tipoMovimiento"),
+                    rs.getInt("cantidad"),
+                    "MOV-" + rs.getInt("idMovimiento"),
+                    rs.getString("motivo")
+                });
+            }
+        } catch (SQLException ex) {
+            LoggerGlobal.error("KardexDAO.listarTodosDesc() falló", ex);
+        }
+        return lista;
+    }
+
+    /**
+     * Lista todos los movimientos de productos que pertenecen a una categoría específica.
+     * Capa: DAO — Implementa: Filtro por categoría en Kardex.
+     */
+    public List<Object[]> listarPorCategoriaDesc(int idCategoria) {
+        List<Object[]> lista = new ArrayList<>();
+        String sql = "SELECT k.idMovimiento, p.nombre AS producto, k.tipoMovimiento, k.cantidad, k.fecha, k.motivo " +
+                     "FROM tb_kardex k " +
+                     "INNER JOIN tb_producto p ON k.idProducto = p.idProducto " +
+                     "WHERE p.idCategoria = ? " +
+                     "ORDER BY k.idMovimiento DESC";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+             
+            ps.setInt(1, idCategoria);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(new Object[]{
+                        rs.getString("fecha"),
+                        rs.getString("producto"),
+                        rs.getString("tipoMovimiento"),
+                        rs.getInt("cantidad"),
+                        "MOV-" + rs.getInt("idMovimiento"),
+                        rs.getString("motivo")
+                    });
+                }
+            }
+        } catch (SQLException ex) {
+            LoggerGlobal.error("KardexDAO.listarPorCategoriaDesc() falló para idCategoria=" + idCategoria, ex);
+        }
+        return lista;
+    }
 }

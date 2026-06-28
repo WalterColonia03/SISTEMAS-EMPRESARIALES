@@ -14,9 +14,11 @@ import java.util.List;
  * Vista de Bitácora de Auditoría — solo lectura (CA-4: sin botón Editar/Eliminar).
  *
  * Historia de Usuario: FR-020-v2 · CA-1 a CA-6
+ *                      FR-041    · CA-1 a CA-2 (Exportar a PDF)
  *
  * Creado: 2026-06-25T23:50:00-05:00
  * Modificado: 2026-06-26T02:17:00-05:00 — getFechaHora() → getTimestamp(), +filtro usuario, +resultado
+ * Modificado: 2026-06-27 — Se agrega exportación PDF (FR-041)
  */
 public class IFrmBitacoraAuditoria extends JInternalFrame {
 
@@ -24,6 +26,7 @@ public class IFrmBitacoraAuditoria extends JInternalFrame {
     private DefaultTableModel   modelBitacora;
     private JButton             btnActualizar;
     private JButton             btnBuscar;
+    private JButton             btnExportarPDF;
     private JTextField          txtFiltroUsuario;
     private JComboBox<String>   cbFiltroResultado;
 
@@ -45,6 +48,7 @@ public class IFrmBitacoraAuditoria extends JInternalFrame {
 
         btnActualizar     = UIKit.primaryButton("↻ Actualizar");
         btnBuscar         = UIKit.secondaryButton("Buscar");
+        btnExportarPDF    = UIKit.secondaryButton("Exportar PDF");
         txtFiltroUsuario  = UIKit.textField();                  // CORRECCIÓN: era styledTextField (no existe)
         txtFiltroUsuario.setToolTipText("Filtrar por usuario...");
         cbFiltroResultado = new JComboBox<>(new String[]{"Todos", "EXITO", "FALLO"});
@@ -59,7 +63,7 @@ public class IFrmBitacoraAuditoria extends JInternalFrame {
                 UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
 
         getContentPane().add(
-                UIKit.screenHeader("Bitácora de Auditoría", "Seguridad  ›  Bitácora"),
+                UIKit.screenHeader("Bitácora de Auditoría", "Seguridad  >  Bitácora"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
@@ -74,6 +78,7 @@ public class IFrmBitacoraAuditoria extends JInternalFrame {
         pnlFiltros.add(cbFiltroResultado);
         pnlFiltros.add(btnBuscar);
         pnlFiltros.add(btnActualizar);
+        pnlFiltros.add(btnExportarPDF);
         cuerpo.add(pnlFiltros, BorderLayout.NORTH);
 
         // Tabla — CA-4: sin botones de edición
@@ -95,6 +100,7 @@ public class IFrmBitacoraAuditoria extends JInternalFrame {
                     ? null : cbFiltroResultado.getSelectedItem().toString();
             cargarDatos(usuario.isEmpty() ? null : usuario, resultado);
         });
+        btnExportarPDF.addActionListener(e -> generarPDF());
         cargarDatos(null, null);
     }
 
@@ -119,6 +125,56 @@ public class IFrmBitacoraAuditoria extends JInternalFrame {
                 b.getDetalle(),
                 b.getTimestamp()    // CORRECCIÓN: era b.getFechaHora()
             });
+        }
+    }
+
+    /**
+     * Genera un reporte PDF de los registros visibles en la bitácora.
+     * Capa: Vista — Implementa: FR-041
+     */
+    private void generarPDF() {
+        if (modelBitacora.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "No hay registros para exportar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String nombreArchivo = "Reporte_Bitacora_" + System.currentTimeMillis() + ".pdf";
+        try {
+            com.itextpdf.text.Document document = new com.itextpdf.text.Document(com.itextpdf.text.PageSize.A4.rotate());
+            com.itextpdf.text.pdf.PdfWriter.getInstance(document, new java.io.FileOutputStream(nombreArchivo));
+            document.open();
+
+            document.add(new com.itextpdf.text.Paragraph("MINIMARKET LAREDO - REPORTE DE BITÁCORA"));
+            document.add(new com.itextpdf.text.Paragraph("Fecha de emisión: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new java.util.Date())));
+            document.add(new com.itextpdf.text.Paragraph(" "));
+
+            com.itextpdf.text.pdf.PdfPTable table = new com.itextpdf.text.pdf.PdfPTable(7);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{1f, 2f, 2f, 3f, 2f, 3f, 3f});
+
+            String[] cabeceras = {"ID", "Usuario", "Módulo", "Acción", "Resultado", "Detalle", "Timestamp"};
+            for (String cabecera : cabeceras) {
+                com.itextpdf.text.pdf.PdfPCell cell = new com.itextpdf.text.pdf.PdfPCell(new com.itextpdf.text.Phrase(cabecera));
+                cell.setBackgroundColor(new com.itextpdf.text.BaseColor(200, 200, 200));
+                table.addCell(cell);
+            }
+
+            for (int i = 0; i < modelBitacora.getRowCount(); i++) {
+                for (int j = 0; j < 7; j++) {
+                    Object val = modelBitacora.getValueAt(i, j);
+                    table.addCell(val == null ? "" : val.toString());
+                }
+            }
+
+            document.add(table);
+            document.close();
+            JOptionPane.showMessageDialog(this, "Bitácora exportada exitosamente a PDF:\n" + nombreArchivo, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            
+            Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_SEGURIDAD, "EXPORTAR_BITACORA_PDF", Utils.BitacoraService.OK, nombreArchivo);
+            
+        } catch (Exception ex) {
+            Utils.LoggerGlobal.logError(this.getClass().getName(), "generarPDF", "Error exportando bitácora", ex);
+            JOptionPane.showMessageDialog(this, "Error al generar el PDF: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

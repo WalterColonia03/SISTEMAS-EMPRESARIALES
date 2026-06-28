@@ -14,7 +14,7 @@ public class MigracionDB {
         System.out.println("Iniciando Fase 1: Migración de datos históricos (TXT -> MySQL)...");
         try {
             crearTablas();
-            migrarCategorias();
+            migrarCategorÃ­as();
             migrarUsuarios();
             migrarClientes();
             migrarProductos();
@@ -80,7 +80,7 @@ public class MigracionDB {
         stmt.close();
     }
 
-    private static void migrarCategorias() throws SQLException {
+    private static void migrarCategorÃ­as() throws SQLException {
         System.out.println("Migrando Categorías...");
         ArchivoCategoriaTXT txt = new ArchivoCategoriaTXT();
         List<Categoria> lista = txt.leer();

@@ -2,8 +2,10 @@ package Vista;
 
 import Clases.Kardex;
 import Clases.Producto;
+import Clases.Categoria;
 import Modelo.KardexDAO;
 import Modelo.ProductoDAO;
+import Modelo.CategoriaDAO;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,8 +13,13 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
+/**
+ * Formulario interno para mostrar el Kardex (Historial de Entradas y Salidas).
+ * Capa: Vista — Implementa: FR-004 (Visualizar Kardex) y Filtros por Categoría.
+ */
 public class IFrmKardex extends JInternalFrame {
 
+    private JComboBox<String> cbCategoria;
     private JComboBox<String> cbProducto;
     private JTable tblKardex;
     private DefaultTableModel modelKardex;
@@ -30,16 +37,20 @@ public class IFrmKardex extends JInternalFrame {
         initComponents();
         buildLayout();
         attachEvents();
+        cargarMovimientos();
         setSize(850, 550);
     }
 
     private void initComponents() {
-        cbProducto = new JComboBox<>();
-        cbProducto.addItem("Seleccione un producto");
-        ProductoDAO pdao = new ProductoDAO();
-        for (Producto p : pdao.listarTodos()) {
-            cbProducto.addItem(p.getIdProducto() + " - " + p.getNombre());
+        cbCategoria = new JComboBox<>();
+        cbCategoria.addItem("Todas las categorías");
+        CategoriaDAO cdao = new CategoriaDAO();
+        for (Categoria c : cdao.listarTodos()) {
+            cbCategoria.addItem(c.getIdCategoria() + " - " + c.getDescripcion());
         }
+
+        cbProducto = new JComboBox<>();
+        actualizarComboProductos();
         btnRefrescar = new JButton("Refrescar");
         btnRefrescar.setBackground(COLOR_PRIMARY);
         btnRefrescar.setForeground(Color.WHITE);
@@ -63,6 +74,30 @@ public class IFrmKardex extends JInternalFrame {
         tblKardex = new JTable(modelKardex);
     }
 
+    /**
+     * Actualiza la lista de productos basada en la categoría seleccionada.
+     * Capa: Vista — Implementa: Lógica de filtros dependientes.
+     */
+    private void actualizarComboProductos() {
+        cbProducto.removeAllItems();
+        cbProducto.addItem("Todos los productos");
+        
+        ProductoDAO pdao = new ProductoDAO();
+        List<Producto> productos = pdao.listarTodos();
+        
+        int idCategoriaSel = -1;
+        if (cbCategoria != null && cbCategoria.getSelectedIndex() > 0) {
+            String catStr = cbCategoria.getSelectedItem().toString();
+            idCategoriaSel = Integer.parseInt(catStr.split(" - ")[0]);
+        }
+        
+        for (Producto p : productos) {
+            if (idCategoriaSel == -1 || p.getIdCategoria() == idCategoriaSel) {
+                cbProducto.addItem(p.getIdProducto() + " - " + p.getNombre());
+            }
+        }
+    }
+
     private void buildLayout() {
         setLayout(new BorderLayout(10, 10));
         ((JPanel) getContentPane()).setBorder(new EmptyBorder(15, 15, 15, 15));
@@ -71,6 +106,8 @@ public class IFrmKardex extends JInternalFrame {
         pnlTop.setBorder(BorderFactory.createTitledBorder("Seleccionar Producto"));
 
         JPanel pnlSelector = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        pnlSelector.add(new JLabel("Categoría:"));
+        pnlSelector.add(cbCategoria);
         pnlSelector.add(new JLabel("Producto:"));
         pnlSelector.add(cbProducto);
         pnlSelector.add(btnRefrescar);
@@ -126,24 +163,75 @@ public class IFrmKardex extends JInternalFrame {
             cargarMovimientos();
         });
 
-        cbProducto.addActionListener(e -> {
+        cbCategoria.addActionListener(e -> {
+            actualizarComboProductos();
             cargarMovimientos();
+        });
+
+        cbProducto.addActionListener(e -> {
+            if (cbProducto.getItemCount() > 0) {
+                cargarMovimientos();
+            }
         });
     }
 
+    /**
+     * Carga los movimientos de Kardex de acuerdo a los filtros seleccionados.
+     * Capa: Vista — Implementa: FR-004 y filtro dinámico.
+     */
     private void cargarMovimientos() {
+        if (cbProducto == null || cbProducto.getItemCount() == 0 || cbProducto.getSelectedItem() == null) return;
+
+        ProductoDAO pdao = new ProductoDAO();
+        KardexDAO dao = new KardexDAO();
+        modelKardex.setRowCount(0);
+
+        int idCategoriaSel = -1;
+        if (cbCategoria.getSelectedIndex() > 0) {
+            String catStr = cbCategoria.getSelectedItem().toString();
+            idCategoriaSel = Integer.parseInt(catStr.split(" - ")[0]);
+        }
+
         if (cbProducto.getSelectedIndex() <= 0) {
-            modelKardex.setRowCount(0);
-            lblStockActual.setText("0");
-            lblEntradas.setText("0");
-            lblSalidas.setText("0");
+            // Mostrar todos los productos (filtrados por categoría si aplica)
+            modelKardex.setColumnIdentifiers(new String[]{"Fecha", "Producto", "Tipo", "Cantidad", "Documento", "Observación"});
+            
+            List<Object[]> listaTodos;
+            if (idCategoriaSel == -1) {
+                listaTodos = dao.listarTodosDesc();
+            } else {
+                listaTodos = dao.listarPorCategoriaDesc(idCategoriaSel);
+            }
+            
+            int totEntradas = 0;
+            int totSalidas = 0;
+            for (Object[] row : listaTodos) {
+                if ("ENTRADA".equalsIgnoreCase((String)row[2])) {
+                    totEntradas += (int)row[3];
+                } else {
+                    totSalidas += (int)row[3];
+                }
+                modelKardex.addRow(row);
+            }
+            
+            int stockTotal = 0;
+            for (Producto p : pdao.listarTodos()) {
+                if (idCategoriaSel == -1 || p.getIdCategoria() == idCategoriaSel) {
+                    stockTotal += p.getCantidad();
+                }
+            }
+            
+            lblStockActual.setText(String.valueOf(stockTotal));
+            lblEntradas.setText(String.valueOf(totEntradas));
+            lblSalidas.setText(String.valueOf(totSalidas));
             return;
         }
         
+        // Mostrar un producto específico
+        modelKardex.setColumnIdentifiers(new String[]{"Fecha", "Tipo", "Cantidad", "Stock Después", "Documento", "Observación"});
         String prodStr = cbProducto.getSelectedItem().toString();
         int idProducto = Integer.parseInt(prodStr.split(" - ")[0]);
         
-        ProductoDAO pdao = new ProductoDAO();
         int stockActual = 0;
         for (Producto p : pdao.listarTodos()) {
             if (p.getIdProducto() == idProducto) {
@@ -152,14 +240,10 @@ public class IFrmKardex extends JInternalFrame {
             }
         }
         
-        KardexDAO dao = new KardexDAO();
         List<Kardex> lista = dao.listarPorProducto(idProducto);
-        
-        modelKardex.setRowCount(0);
         
         int totEntradas = 0;
         int totSalidas = 0;
-        
         int stockVirtual = 0;
         
         for (Kardex k : lista) {
@@ -171,7 +255,8 @@ public class IFrmKardex extends JInternalFrame {
                 stockVirtual -= k.getCantidad();
             }
             
-            modelKardex.addRow(new Object[]{
+            // Insertar en la posición 0 para invertir el orden (más reciente primero)
+            modelKardex.insertRow(0, new Object[]{
                 k.getFecha(),
                 k.getTipoMovimiento(),
                 k.getCantidad(),

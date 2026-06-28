@@ -65,7 +65,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
     private void initComponents() {
         txtCodProducto = UIKit.textField();
         txtCodProducto.setPreferredSize(new Dimension(0, 44));
-        txtCodProducto.putClientProperty("JTextField.placeholderText", "Ingresa el cÃ³digo de barras y presiona Enter...");
+        txtCodProducto.putClientProperty("JTextField.placeholderText", "Ingresa el código de barras y presiona Enter...");
 
         String[] columns = { "ID", "Producto", "P. Unit.", "Cant.", "Subtotal" };
         modelCarrito = new DefaultTableModel(columns, 0) {
@@ -95,7 +95,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
         cbComprobante = new JComboBox<>(new String[]{"Boleta Simple", "Factura"});
         cbComprobante.setPreferredSize(new Dimension(0, 36));
 
-        cbMetodoPago = new JComboBox<>(new String[]{"Efectivo", "Mercado Pago (QR)", "Tarjeta DÃ©bito", "Tarjeta CrÃ©dito", "Yape", "Plin"});
+        cbMetodoPago = new JComboBox<>(new String[]{"Efectivo", "Mercado Pago (QR)", "Tarjeta Débito", "Tarjeta Crédito", "Yape", "Plin"});
         cbMetodoPago.setPreferredSize(new Dimension(0, 36));
 
         txtMontoRecibido = UIKit.textField();
@@ -124,11 +124,11 @@ public class IFrmPuntoVenta extends JInternalFrame {
         getContentPane().setBackground(UIKit.BG_APP);
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        // ==== LADO IZQUIERDO (Carrito + CatÃ¡logo) ====
+        // ==== LADO IZQUIERDO (Carrito + Catálogo) ====
         JPanel pnlCentro = new JPanel(new BorderLayout(0, 15));
         pnlCentro.setOpaque(false);
 
-        // Arriba: Carrito y cÃ³digo de barras
+        // Arriba: Carrito y código de barras
         JPanel pnlCart = UIKit.card();
         pnlCart.setLayout(new BorderLayout(0, 10));
         pnlCart.add(txtCodProducto, BorderLayout.NORTH);
@@ -142,7 +142,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
         lblHelp.setForeground(UIKit.TEXT_SECONDARY);
         pnlCart.add(lblHelp, BorderLayout.SOUTH);
 
-        // Abajo: CatÃ¡logo
+        // Abajo: Catálogo
         JPanel pnlCatalogo = new JPanel(new BorderLayout(0, 10));
         pnlCatalogo.setOpaque(false);
 
@@ -319,7 +319,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
             pnlGridProductos.add(card);
         }
         
-        // Rellenar espacios vacÃ­os si hay pocos productos para no deformar el grid
+        // Rellenar espacios vacíos si hay pocos productos para no deformar el grid
         int faltantes = 3 - (lista.size() % 3);
         if(faltantes != 3) {
             for(int i=0; i<faltantes; i++) {
@@ -362,14 +362,14 @@ public class IFrmPuntoVenta extends JInternalFrame {
     }
 
     private void attachEvents() {
-        // Buscador catÃ¡logo
+        // Buscador catálogo
         txtBuscarProd.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { cargarProductos(txtBuscarProd.getText()); }
             public void removeUpdate(DocumentEvent e) { cargarProductos(txtBuscarProd.getText()); }
             public void changedUpdate(DocumentEvent e) { cargarProductos(txtBuscarProd.getText()); }
         });
 
-        // Evento de ediciÃ³n de cantidad en el carrito
+        // Evento de edición de cantidad en el carrito
         modelCarrito.addTableModelListener(e -> {
             if (e.getColumn() == 3 && e.getType() == javax.swing.event.TableModelEvent.UPDATE) {
                 int row = e.getFirstRow();
@@ -392,7 +392,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
                     
                     if (prodReal != null && nuevaCant > prodReal.getCantidad()) {
                         int maxDisponible = prodReal.getCantidad();
-                        JOptionPane.showMessageDialog(IFrmPuntoVenta.this, "Stock insuficiente. MÃ¡ximo disponible: " + maxDisponible);
+                        JOptionPane.showMessageDialog(IFrmPuntoVenta.this, "Stock insuficiente. Máximo disponible: " + maxDisponible);
                         SwingUtilities.invokeLater(() -> modelCarrito.setValueAt(maxDisponible, row, 3));
                         return;
                     }
@@ -406,13 +406,13 @@ public class IFrmPuntoVenta extends JInternalFrame {
                         cargarProductos(txtBuscarProd.getText());
                     });
                 } catch(NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(IFrmPuntoVenta.this, "Ingrese una cantidad numÃ©rica vÃ¡lida.");
+                    JOptionPane.showMessageDialog(IFrmPuntoVenta.this, "Ingrese una cantidad numérica válida.");
                     SwingUtilities.invokeLater(() -> modelCarrito.setValueAt(1, row, 3));
                 }
             }
         });
 
-        // Ingreso por cÃ³digo barras
+        // Ingreso por código barras
         txtCodProducto.addActionListener(e -> {
             String cod = txtCodProducto.getText().trim();
             if(cod.isEmpty()) return;
@@ -430,7 +430,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
                     JOptionPane.showMessageDialog(this, "Producto no encontrado");
                 }
             } catch(Exception ex) {
-                JOptionPane.showMessageDialog(this, "CÃ³digo invÃ¡lido");
+                JOptionPane.showMessageDialog(this, "Código inválido");
             }
         });
 
@@ -483,7 +483,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
                             Cliente nC = new Cliente(cdao.generarId(), datos[0], datos[1] + " " + datos[2], dni, "", "", 1);
                             cdao.guardar(nC);
                         } else {
-                            int resp = JOptionPane.showConfirmDialog(this, "DNI no encontrado en la base de datos pÃºblica.\nÂ¿Desea registrarlo manualmente?", "No encontrado", JOptionPane.YES_NO_OPTION);
+                            int resp = JOptionPane.showConfirmDialog(this, "DNI no encontrado en la base de datos pública.\nÂ¿Desea registrarlo manualmente?", "No encontrado", JOptionPane.YES_NO_OPTION);
                             if (resp == JOptionPane.YES_OPTION) {
                                 String nombres = JOptionPane.showInputDialog(this, "Nombres y apellidos:");
                                 if (nombres != null && !nombres.trim().isEmpty()) {
@@ -505,7 +505,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
                         }
                     } else {
                         lblNombreCliente.setText("Consumidor Final");
-                        JOptionPane.showMessageDialog(this, "DNI/RUC invÃ¡lido");
+                        JOptionPane.showMessageDialog(this, "DNI/RUC inválido");
                     }
                 });
             }
@@ -546,18 +546,27 @@ public class IFrmPuntoVenta extends JInternalFrame {
         // Registrar
         btnRegistrar.addActionListener(e -> {
             if (modelCarrito.getRowCount() == 0) {
-                JOptionPane.showMessageDialog(this, "El carrito estÃ¡ vacÃ­o");
+                JOptionPane.showMessageDialog(this, "El carrito está vacío");
                 return;
             }
             try {
                 String totalStr = lblTotal.getText().replace("S/ ", "").replace(",", ".");
                 BigDecimal total = new BigDecimal(totalStr);
 
-                // ValidaciÃ³n de pago en Efectivo
+                // FR-051: Regulación SUNAT (CA-1 y CA-2) - DNI obligatorio para ventas >= S/ 700
+                if (total.compareTo(new BigDecimal("700")) >= 0 && lblNombreCliente.getText().equals("Consumidor Final")) {
+                    JOptionPane.showMessageDialog(this, 
+                        "Por ley de SUNAT, compras a partir de S/ 700.00 exigen DNI o RUC.\n\nPor favor, busque o registre el documento del cliente para continuar.", 
+                        "Regla SUNAT (FR-051)", 
+                        JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Validación de pago en Efectivo
                 if (cbMetodoPago.getSelectedItem().toString().equals("Efectivo")) {
                     String montoStr = txtMontoRecibido.getText().trim().replace(",", ".");
                     if (montoStr.isEmpty()) {
-                        JOptionPane.showMessageDialog(this, "Debe ingresar el monto recibido del cliente.", "Monto vacÃ­o", JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Debe ingresar el monto recibido del cliente.", "Monto vacío", JOptionPane.WARNING_MESSAGE);
                         return;
                     }
                     try {
@@ -573,19 +582,19 @@ public class IFrmPuntoVenta extends JInternalFrame {
                             return;
                         }
                     } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(this, "Monto recibido invÃ¡lido. Ingrese solo nÃºmeros.", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "Monto recibido inválido. Ingrese solo números.", "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                 } else {
-                    // ValidaciÃ³n para pagos digitales (Yape, Tarjetas, etc)
+                    // Validación para pagos digitales (Yape, Tarjetas, etc)
                     String montoStr = txtMontoRecibido.getText().trim().replace(",", ".");
                     BigDecimal montoRecibido = new BigDecimal(montoStr);
                     if (montoRecibido.compareTo(total) > 0) {
                         JOptionPane.showMessageDialog(this, 
                             "âš  Los pagos digitales (Yape, Plin, Tarjeta) deben ser por el monto EXACTO de la venta.\n\n" +
-                            "Si el cliente transfiriÃ³ S/ " + montoRecibido.toPlainString() + " por error (S/ " + 
-                            montoRecibido.subtract(total).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + " de mÃ¡s),\n" +
-                            "la devoluciÃ³n debe realizarse manualmente desde su aplicaciÃ³n bancaria\npara evitar descuadres en la contabilidad del sistema.", 
+                            "Si el cliente transfirió S/ " + montoRecibido.toPlainString() + " por error (S/ " + 
+                            montoRecibido.subtract(total).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + " de más),\n" +
+                            "la devolución debe realizarse manualmente desde su aplicación bancaria\npara evitar descuadres en la contabilidad del sistema.", 
                             "Sobrepago Digital Detectado", 
                             JOptionPane.WARNING_MESSAGE);
                         return;
@@ -614,7 +623,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
                         int puntosGanados = total.intValue();
                         cdao.actualizarPuntosPorDni(dniStr, puntosGanados - puntosACanjear);
                     }
-                    JOptionPane.showMessageDialog(this, "âœ… Venta registrada con Ã©xito.\nVuelto: " + lblVuelto.getText());
+                    JOptionPane.showMessageDialog(this, "âœ… Venta registrada con éxito.\nVuelto: " + lblVuelto.getText());
                     btnCancelar.doClick();
                     cargarProductos(txtBuscarProd.getText()); // recargar stock
                 } else {

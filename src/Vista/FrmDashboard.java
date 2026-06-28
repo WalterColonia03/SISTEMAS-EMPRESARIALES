@@ -19,11 +19,11 @@ public class FrmDashboard extends JFrame {
     
     private JButton btnPOS, btnVentas, btnDevoluciones, btnFidelizacion;
     private JButton btnClientes, btnProveedores;
-    private JButton btnCategorias, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario;
+    private JButton btnCategorÃ­as, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario;
     private JButton btnCompras;
     private JButton btnFlujoCaja, btnLibroMayor, btnCuentasCP, btnRepVentas, btnReportesAvanzados;
-    private JButton btnEmpleados, btnPlanilla;
-    private JButton btnUsuarios, btnAuditoria, btnConfig;
+    private JButton btnEmpleados, btnPlanilla, btnEvaluacion;
+    private JButton btnUsuarios, btnAuditoria, btnConfig, btnPermisos;
     private JButton btnLogout;
     
     private JPanel grpInventario, grpCompras, grpPersonal, grpAdmin, grpFinanzas;
@@ -55,7 +55,7 @@ public class FrmDashboard extends JFrame {
         inactividadTimer = new Timer(TIEMPO_INACTIVIDAD, e -> {
             new Modelo.UsuarioDAO().cambiarEstadoSesion(Sesion.getUsuario(), 0);
             Utils.BitacoraService.registrar(Sesion.getUsuario(), Utils.BitacoraService.MOD_LOGIN, "CIERRE_INACTIVIDAD", Utils.BitacoraService.OK, "Sesion cerrada por inactividad");
-            JOptionPane.showMessageDialog(this, "SesiÃ³n cerrada por inactividad (30 minutos).", "Seguridad", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Sesión cerrada por inactividad (30 minutos).", "Seguridad", JOptionPane.WARNING_MESSAGE);
             new FrmLogin().setVisible(true);
             this.dispose();
         });
@@ -77,10 +77,10 @@ public class FrmDashboard extends JFrame {
 
         btnPOS = buildMenuButton("Punto de Venta (POS)");
         btnDevoluciones = buildMenuButton("Devoluciones");
-        btnFidelizacion = buildMenuButton("FidelizaciÃ³n");
+        btnFidelizacion = buildMenuButton("Fidelización");
         btnClientes = buildMenuButton("Clientes");
         btnProveedores = buildMenuButton("Proveedores");
-        btnCategorias = buildMenuButton("CategorÃ­as");
+        btnCategorÃ­as = buildMenuButton("Categorías");
         btnProductos = buildMenuButton("Productos");
         btnKardex = buildMenuButton("Kardex");
         btnAlertasInventario = buildMenuButton("Alertas de Inventario");
@@ -93,10 +93,12 @@ public class FrmDashboard extends JFrame {
         btnReportesAvanzados = buildMenuButton("Reportes Avanzados (BI)");
         btnEmpleados = buildMenuButton("Ficha de Empleados");
         btnPlanilla = buildMenuButton("Planilla y Asistencia");
-        btnUsuarios = buildMenuButton("GestiÃ³n Usuarios");
-        btnAuditoria = buildMenuButton("BitÃ¡cora AuditorÃ­a");
-        btnConfig = buildMenuButton("ConfiguraciÃ³n ERP");
-        btnLogout = buildMenuButton("Cerrar SesiÃ³n");
+        btnEvaluacion = buildMenuButton("Evaluación Desempeño");
+        btnUsuarios = buildMenuButton("Gestión Usuarios");
+        btnPermisos = buildMenuButton("Gestión de Permisos");
+        btnAuditoria = buildMenuButton("Bitácora Auditoría");
+        btnConfig = buildMenuButton("Configuración ERP");
+        btnLogout = buildMenuButton("Cerrar Sesión");
     }
 
     private void buildLayout() {
@@ -122,7 +124,7 @@ public class FrmDashboard extends JFrame {
         pnlMenuContainer.add(navGroup("Ventas", btnPOS, btnDevoluciones, btnFidelizacion));
         pnlMenuContainer.add(navGroup("Clientes y Proveedores", btnClientes, btnProveedores));
         
-        grpInventario = navGroup("Inventario", btnCategorias, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario);
+        grpInventario = navGroup("Inventario", btnCategorÃ­as, btnProductos, btnKardex, btnAlertasInventario, btnRepInventario);
         pnlMenuContainer.add(grpInventario);
         
         grpCompras = navGroup("Compras", btnCompras);
@@ -131,10 +133,10 @@ public class FrmDashboard extends JFrame {
         grpFinanzas = navGroup("Finanzas y Reportes", btnFlujoCaja, btnLibroMayor, btnCuentasCP, btnRepVentas, btnReportesAvanzados);
         pnlMenuContainer.add(grpFinanzas);
         
-        grpPersonal = navGroup("Personal", btnEmpleados, btnPlanilla);
+        grpPersonal = navGroup("Personal", btnEmpleados, btnPlanilla, btnEvaluacion);
         pnlMenuContainer.add(grpPersonal);
         
-        grpAdmin = navGroup("AdministraciÃ³n", btnUsuarios, btnAuditoria, btnConfig);
+        grpAdmin = navGroup("Administración", btnUsuarios, btnPermisos, btnAuditoria, btnConfig);
         pnlMenuContainer.add(grpAdmin);
         
         pnlMenuContainer.add(Box.createVerticalGlue());
@@ -159,7 +161,7 @@ public class FrmDashboard extends JFrame {
         pnlTopBar.setBackground(Color.WHITE);
         pnlTopBar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIKit.BORDER), new EmptyBorder(12, 24, 12, 24)));
         
-        lblBreadcrumb = new JLabel("Inicio â€º Panel de Control ERP");
+        lblBreadcrumb = new JLabel("Inicio > Panel de Control ERP");
         lblBreadcrumb.setFont(UIKit.BODY_BOLD);
         lblBreadcrumb.setForeground(UIKit.TEXT_PRIMARY);
         pnlTopBar.add(lblBreadcrumb, BorderLayout.WEST);
@@ -169,7 +171,7 @@ public class FrmDashboard extends JFrame {
         
         JTextField txtSearchGlobal = UIKit.textField();
         txtSearchGlobal.setPreferredSize(new Dimension(200, 32));
-        txtSearchGlobal.putClientProperty("JTextField.placeholderText", "Buscar mÃ³dulo...");
+        txtSearchGlobal.putClientProperty("JTextField.placeholderText", "Buscar módulo...");
         pnlUserInfo.add(txtSearchGlobal);
         
         String nombreUsuario = Sesion.getUsuario() != null ? Sesion.getUsuario() : "Admin";
@@ -351,10 +353,10 @@ public class FrmDashboard extends JFrame {
     private void attachEvents() {
         btnPOS.addActionListener(e -> openFrame(new IFrmPuntoVenta(), "Punto de Venta"));
         btnDevoluciones.addActionListener(e -> openFrame(new IFrmDevoluciones(), "Devoluciones"));
-        btnFidelizacion.addActionListener(e -> openFrame(new IFrmFidelizacion(), "FidelizaciÃ³n"));
-        btnClientes.addActionListener(e -> openFrame(new IFrmGestionClientes(), "GestiÃ³n de Clientes"));
+        btnFidelizacion.addActionListener(e -> openFrame(new IFrmFidelizacion(), "Fidelización"));
+        btnClientes.addActionListener(e -> openFrame(new IFrmGestionClientes(), "Gestión de Clientes"));
         btnProveedores.addActionListener(e -> openFrame(new IFrmGestionProveedores(), "Proveedores"));
-        btnCategorias.addActionListener(e -> openFrame(new IFrmGestionCategorias(), "CategorÃ­as"));
+        btnCategorÃ­as.addActionListener(e -> openFrame(new IFrmGestionCategorias(), "Categorías"));
         btnProductos.addActionListener(e -> openFrame(new IFrmGestionProductos(), "Productos"));
         btnKardex.addActionListener(e -> openFrame(new IFrmKardex(), "Kardex"));
         btnAlertasInventario.addActionListener(e -> openFrame(new IFrmAlertasInventario(), "Alertas de Inventario"));
@@ -367,15 +369,17 @@ public class FrmDashboard extends JFrame {
         btnReportesAvanzados.addActionListener(e -> openFrame(new IFrmReportesAvanzados(), "Reportes Avanzados"));
         btnEmpleados.addActionListener(e -> openFrame(new IFrmFichaEmpleados(), "Empleados"));
         btnPlanilla.addActionListener(e -> openFrame(new IFrmPlanillaAsistencia(), "Planilla y Asistencia"));
+        btnEvaluacion.addActionListener(e -> openFrame(new IFrmEvaluacionDesempeno(), "Evaluación Desempeño"));
         btnUsuarios.addActionListener(e -> openFrame(new IFrmGestionUsuarios(), "Usuarios"));
-        btnAuditoria.addActionListener(e -> openFrame(new IFrmBitacoraAuditoria(), "AuditorÃ­a"));
-        btnConfig.addActionListener(e -> openFrame(new IFrmConfiguracionERP(), "ConfiguraciÃ³n"));
+        btnPermisos.addActionListener(e -> openFrame(new IFrmGestionPermisos(), "Permisos"));
+        btnAuditoria.addActionListener(e -> openFrame(new IFrmBitacoraAuditoria(), "Auditoría"));
+        btnConfig.addActionListener(e -> openFrame(new IFrmConfiguracionERP(), "Configuración"));
 
         btnLogout.addActionListener(e -> {
-            int op = JOptionPane.showConfirmDialog(this, "Â¿Cerrar sesiÃ³n?", "Salir", JOptionPane.YES_NO_OPTION);
+            int op = JOptionPane.showConfirmDialog(this, "Â¿Cerrar sesión?", "Salir", JOptionPane.YES_NO_OPTION);
             if (op == JOptionPane.YES_OPTION) {
                 new Modelo.UsuarioDAO().cambiarEstadoSesion(Sesion.getUsuario(), 0);
-                Utils.BitacoraService.registrar(Sesion.getUsuario(), Utils.BitacoraService.MOD_LOGIN, "LOGOUT", Utils.BitacoraService.OK, "Cierre de sesiÃ³n manual");
+                Utils.BitacoraService.registrar(Sesion.getUsuario(), Utils.BitacoraService.MOD_LOGIN, "LOGOUT", Utils.BitacoraService.OK, "Cierre de sesión manual");
                 new FrmLogin().setVisible(true);
                 this.dispose();
             }
@@ -383,7 +387,7 @@ public class FrmDashboard extends JFrame {
     }
 
     private void openFrame(JInternalFrame iframe, String frameName) {
-        lblBreadcrumb.setText("Inicio â€º " + frameName);
+        lblBreadcrumb.setText("Inicio > " + frameName);
         for (JInternalFrame f : desktopPane.getAllFrames()) {
             if (f != bgDashboardFrame) {
                 f.dispose();
@@ -401,19 +405,39 @@ public class FrmDashboard extends JFrame {
 
     private void aplicarRol() {
         String rol = Sesion.getRol();
-        if (rol != null && rol.equalsIgnoreCase("Vendedor")) {
-            // Ocultar modulos que no son de Vendedor para limpiar la vista
-            grpInventario.setVisible(false);
-            grpCompras.setVisible(false);
-            grpPersonal.setVisible(false);
-            grpAdmin.setVisible(false);
-            
-            // Ocultar funciones avanzadas de finanzas pero dejar Historial
-            btnFlujoCaja.setVisible(false);
-            btnLibroMayor.setVisible(false);
-            btnCuentasCP.setVisible(false);
-            btnReportesAvanzados.setVisible(false);
-        }
+        if (rol == null) return;
+
+        Modelo.PermisoDAO dao = new Modelo.PermisoDAO();
+
+        // Si es ADMINISTRADOR, por defecto PermisoDAO devuelve true para todo.
+        boolean puedeVentas = dao.tienePermiso(rol, "VENTAS");
+        boolean puedeInventario = dao.tienePermiso(rol, "INVENTARIO");
+        boolean puedeCompras = dao.tienePermiso(rol, "COMPRAS");
+        boolean puedeFinanzas = dao.tienePermiso(rol, "FINANZAS");
+        boolean puedePersonal = dao.tienePermiso(rol, "PERSONAL");
+        boolean puedeReportes = dao.tienePermiso(rol, "REPORTES");
+        boolean puedeAdmin = dao.tienePermiso(rol, "ADMINISTRACION");
+
+        btnPOS.setVisible(puedeVentas);
+        btnDevoluciones.setVisible(puedeVentas);
+        btnFidelizacion.setVisible(puedeVentas);
+        btnClientes.setVisible(puedeVentas);
+
+        grpInventario.setVisible(puedeInventario);
+
+        grpCompras.setVisible(puedeCompras);
+        btnProveedores.setVisible(puedeCompras);
+
+        btnFlujoCaja.setVisible(puedeFinanzas);
+        btnLibroMayor.setVisible(puedeFinanzas);
+        btnCuentasCP.setVisible(puedeFinanzas);
+
+        grpPersonal.setVisible(puedePersonal);
+
+        btnRepVentas.setVisible(puedeReportes);
+        btnReportesAvanzados.setVisible(puedeReportes);
+
+        grpAdmin.setVisible(puedeAdmin);
     }
 
     private void configFrame() {

@@ -34,12 +34,12 @@ public class IFrmReportesAvanzados extends JInternalFrame {
     // ── Tabs ─────────────────────────────────────────────────────────────────
     private JTabbedPane tabs;
 
-    // ── Tab 1: Ranking más vendidos (FR-006) ─────────────────────────────────
+    // ── Tab 1: Ranking más vendidos  ─────────────────────────────────
     private DefaultTableModel  modelRanking;
     private JLabel             lblTotalUnidades;
     private JLabel             lblTotalIngreso;
 
-    // ── Tab 2: Stock Bajo (FR-018) ───────────────────────────────────────────
+    // ── Tab 2: Stock Bajo  ───────────────────────────────────────────
     private DefaultTableModel  modelStockBajo;
     private JLabel             lblTotalBajo;
 
@@ -115,7 +115,7 @@ public class IFrmReportesAvanzados extends JInternalFrame {
 
         // Header
         getContentPane().add(
-                UIKit.screenHeader("Reportes Avanzados", "Reportes  ›  Inteligencia de Negocio"),
+                UIKit.screenHeader("Reportes Avanzados", "Reportes  >  Inteligencia de Negocio"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(0, UIKit.SPACE_MD));
@@ -135,9 +135,9 @@ public class IFrmReportesAvanzados extends JInternalFrame {
         tabs = new JTabbedPane();
         tabs.setFont(UIKit.BODY_BOLD);
         tabs.setBackground(UIKit.BG_CARD);
-        tabs.addTab("📦 Más Vendidos (FR-006)", buildTabRanking());
-        tabs.addTab("⚠ Stock Bajo (FR-018)",    buildTabStockBajo());
-        tabs.addTab("💰 Ganancias (FR-019)",     buildTabGanancias());
+        tabs.addTab("📦 Más Vendidos ", buildTabRanking());
+        tabs.addTab("⚠ Stock Bajo ",    buildTabStockBajo());
+        tabs.addTab("💰 Ganancias ",     buildTabGanancias());
         cuerpo.add(tabs, BorderLayout.CENTER);
 
         getContentPane().add(cuerpo, BorderLayout.CENTER);

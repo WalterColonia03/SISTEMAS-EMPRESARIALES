@@ -10,9 +10,9 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
 /**
- * Sistema de diseÃ±o centralizado del ERP Minimarket LAREDO.
- * Toda pantalla nueva o rediseÃ±ada debe construir su UI usando
- * estos tokens y fÃ¡bricas â€” nunca colores/fuentes sueltos.
+ * Sistema de diseño centralizado del ERP Minimarket LAREDO.
+ * Toda pantalla nueva o rediseñada debe construir su UI usando
+ * estos tokens y fábricas â€” nunca colores/fuentes sueltos.
  */
 public final class UIKit {
 
@@ -33,7 +33,7 @@ public final class UIKit {
     public static final Color DANGER          = new Color(0xD64550);
     public static final Color INFO            = ACCENT;
 
-    // ===================== TIPOGRAFÃ A =====================
+    // ===================== TIPOGRAFÍA =====================
     private static final String FAM = "Segoe UI";
     public static final Font H1        = new Font(FAM, Font.BOLD, 20);
     public static final Font H2        = new Font(FAM, Font.BOLD, 15);
@@ -112,7 +112,7 @@ public final class UIKit {
         return tf;
     }
 
-    /** Campo de solo lectura (reemplaza el patrÃ³n "JTextField deshabilitado gris" actual). */
+    /** Campo de solo lectura (reemplaza el patrón "JTextField deshabilitado gris" actual). */
     public static JTextField readOnlyField() {
         JTextField field = textField();
         field.setEditable(false);
@@ -175,7 +175,7 @@ public final class UIKit {
         return p;
     }
 
-    /** Encabezado estÃ¡ndar de una tarjeta de secciÃ³n (tÃ­tulo + opcional acciÃ³n a la derecha). */
+    /** Encabezado estándar de una tarjeta de sección (título + opcional acción a la derecha). */
     public static JPanel sectionHeader(String title, JComponent trailingAction) {
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
@@ -188,7 +188,7 @@ public final class UIKit {
         return header;
     }
 
-    /** Encabezado de pantalla: H1 + subtÃ­tulo/breadcrumb. */
+    /** Encabezado de pantalla: H1 + subtítulo/breadcrumb. */
     public static JPanel screenHeader(String titulo, String breadcrumb) {
         JPanel p = new JPanel();
         p.setOpaque(false);
@@ -235,6 +235,9 @@ public final class UIKit {
         contenido.add(lblValor);
         contenido.add(lblSub);
 
+        card.putClientProperty("val", lblValor);
+        card.putClientProperty("sub", lblSub);
+
         card.add(barra, BorderLayout.WEST);
         card.add(contenido, BorderLayout.CENTER);
         return card;
@@ -249,7 +252,7 @@ public final class UIKit {
         badge.setHorizontalAlignment(SwingConstants.CENTER);
         badge.setBorder(new EmptyBorder(3, 10, 3, 10));
         badge.putClientProperty(FlatClientProperties.STYLE,
-                "arc: 999; background: " + hex(mezclarConBlanco(color, 0.85f)) + ";");
+                "background: " + hex(mezclarConBlanco(color, 0.85f)) + ";");
         badge.setOpaque(true);
         return badge;
     }

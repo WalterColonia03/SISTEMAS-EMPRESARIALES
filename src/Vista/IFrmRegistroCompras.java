@@ -21,7 +21,7 @@ import java.util.Date;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-// CORRECCIÃƒÆ’Ã¢â‚¬Å“N: import java.awt.* duplicado eliminado (2026-06-26 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â AuditorÃƒÆ’Ã‚Â­a ERP)
+// CORRECCIÃƒÆ’Ã¢â‚¬Å“N: import java.awt.* duplicado eliminado (2026-06-26 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â AuditorÃƒÆ’ÂÂ­a ERP)
 
 public class IFrmRegistroCompras extends JInternalFrame {
 
@@ -85,7 +85,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
         txtVencimiento = UIKit.textField();
         txtVencimiento.putClientProperty("JTextField.placeholderText", "AAAA-MM-DD");
 
-        String[] columns = {"CÃƒÆ’Ã‚Â³digo", "Producto", "Cant", "P. Unit", "Subtotal", "Lote", "Vencimiento"};
+        String[] columns = {"CÃƒÆ’ÂÂ³digo", "Producto", "Cant", "P. Unit", "Subtotal", "Lote", "Vencimiento"};
         modelDetalle = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
@@ -118,7 +118,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Registro de Compras", "Compras  ÃƒÂ¢Ã¢â€šÂ¬Ã‚Âº  Ingreso de MercaderÃƒÆ’Ã‚Â­a"),
+                UIKit.screenHeader("Registro de Compras", "Compras  >  Ingreso de Mercadería"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
@@ -169,7 +169,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
         // Agregar Productos
         JPanel pnlDetalle = UIKit.card();
         pnlDetalle.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlDetalle.add(UIKit.sectionHeader("Detalle de MercaderÃƒÆ’Ã‚Â­a", btnQuitarProducto), BorderLayout.NORTH);
+        pnlDetalle.add(UIKit.sectionHeader("Detalle de Mercadería", btnQuitarProducto), BorderLayout.NORTH);
         
         JPanel pnlFormProd = new JPanel(new GridBagLayout());
         pnlFormProd.setOpaque(false);
@@ -179,7 +179,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
         
         // Fila 1
         gbcP.gridy = 0;
-        gbcP.gridx = 0; gbcP.weightx = 0.2; pnlFormProd.add(UIKit.fieldLabel("CÃƒÆ’Ã‚Â³digo"), gbcP);
+        gbcP.gridx = 0; gbcP.weightx = 0.2; pnlFormProd.add(UIKit.fieldLabel("CÃƒÆ’ÂÂ³digo"), gbcP);
         gbcP.gridx = 1; gbcP.weightx = 0.4; pnlFormProd.add(UIKit.fieldLabel("Producto"), gbcP);
         gbcP.gridx = 2; gbcP.weightx = 0.1; pnlFormProd.add(UIKit.fieldLabel("Cant"), gbcP);
         gbcP.gridx = 3; gbcP.weightx = 0.1; gbcP.insets = new Insets(0, 0, UIKit.SPACE_SM, 0); pnlFormProd.add(UIKit.fieldLabel("P. Unit"), gbcP);
@@ -297,7 +297,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
                     JOptionPane.showMessageDialog(this, "Producto no encontrado");
                 }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "CÃƒÆ’Ã‚Â³digo invÃƒÆ’Ã‚Â¡lido");
+                JOptionPane.showMessageDialog(this, "CÃƒÆ’ÂÂ³digo invÃƒÆ’ÂÂ¡lido");
             }
         });
 
@@ -332,7 +332,7 @@ public class IFrmRegistroCompras extends JInternalFrame {
                 
                 recalcularTotales();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Ingrese valores numÃƒÆ’Ã‚Â©ricos vÃƒÆ’Ã‚Â¡lidos en Cantidad y Precio");
+                JOptionPane.showMessageDialog(this, "Ingrese valores numÃƒÆ’ÂÂ©ricos vÃƒÆ’ÂÂ¡lidos en Cantidad y Precio");
             }
         });
 
@@ -381,14 +381,14 @@ public class IFrmRegistroCompras extends JInternalFrame {
                 
                 CompraDAO dao = new CompraDAO();
                 if (dao.registrarCompra(compra)) {
-                    JOptionPane.showMessageDialog(this, "Compra registrada y stock actualizado con ÃƒÆ’Ã‚Â©xito.");
+                    JOptionPane.showMessageDialog(this, "Compra registrada y stock actualizado con ÃƒÆ’ÂÂ©xito.");
                     btnLimpiar.doClick();
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al registrar la compra en la base de datos.");
                 }
                 
             } catch (Exception ex) {
-                Utils.LoggerGlobal.error("IFrmRegistroCompras.registrar() fallÃƒÆ’Ã‚Â³", ex); // CORRECCIÃƒÆ’Ã¢â‚¬Å“N
+                Utils.LoggerGlobal.error("IFrmRegistroCompras.registrar() fallÃƒÆ’ÂÂ³", ex); // CORRECCIÃƒÆ’Ã¢â‚¬Å“N
                 JOptionPane.showMessageDialog(this, "Error al procesar los datos de la compra: " + ex.getMessage());
             }
         });
@@ -411,8 +411,8 @@ public class IFrmRegistroCompras extends JInternalFrame {
     }
 
     /**
-     * Recalcula subtotal, IGV (18%) y total usando BigDecimal para precisiÃƒÆ’Ã‚Â³n exacta.
-     * CORRECCIÃƒÆ’Ã¢â‚¬Å“N: Migrado de double a BigDecimal (2026-06-26 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â AuditorÃƒÆ’Ã‚Â­a ERP)
+     * Recalcula subtotal, IGV (18%) y total usando BigDecimal para precisiÃƒÆ’ÂÂ³n exacta.
+     * CORRECCIÃƒÆ’Ã¢â‚¬Å“N: Migrado de double a BigDecimal (2026-06-26 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â AuditorÃƒÆ’ÂÂ­a ERP)
      */
     private void recalcularTotales() {
         BigDecimal subtotal = BigDecimal.ZERO;

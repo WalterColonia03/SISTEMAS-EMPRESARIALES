@@ -1,5 +1,6 @@
-4,Lacteos,1
-5,Abarrotes,1
+1,Abarrotes,1
+2,Bebidas,1
+3,Lácteos,1
 6,Limpieza,1
 7,Congelados,1
 8,Cuidado Personal,1

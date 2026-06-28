@@ -126,7 +126,7 @@ public class IFrmGestionProveedores extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Gestión de Proveedores", "Clientes y Proveedores  ›  Proveedores"),
+                UIKit.screenHeader("Gestión de Proveedores", "Clientes y Proveedores  >  Proveedores"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));

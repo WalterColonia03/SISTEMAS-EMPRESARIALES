@@ -64,7 +64,7 @@ public class IFrmFidelizacion extends JInternalFrame {
                 UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
 
         getContentPane().add(
-                UIKit.screenHeader("CRM y Fidelización", "Ventas  ›  Fidelización"),
+                UIKit.screenHeader("CRM y Fidelización", "Ventas  >  Fidelización"),
                 BorderLayout.NORTH);
 
         JTabbedPane tabs = new JTabbedPane();

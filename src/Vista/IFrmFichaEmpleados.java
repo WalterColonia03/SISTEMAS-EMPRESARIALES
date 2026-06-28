@@ -17,7 +17,7 @@ public class IFrmFichaEmpleados extends JInternalFrame {
     private JTextField txtDni;
     private JTextField txtTelefono;
     private JTextField txtCorreo;
-    private JTextField txtDireccion;
+    private JTextField txtTurno;
     private JComboBox<String> cbCargo;
     private JTextField txtSalario;
     private JComboBox<String> cbEstado;
@@ -36,6 +36,18 @@ public class IFrmFichaEmpleados extends JInternalFrame {
         buildLayout();
         attachEvents();
         setSize(950, 600);
+        cargarEmpleados();
+    }
+
+    private void cargarEmpleados() {
+        modelEmpleados.setRowCount(0);
+        Modelo.EmpleadoDAO dao = new Modelo.EmpleadoDAO();
+        for (Clases.Empleado e : dao.listarTodos()) {
+            modelEmpleados.addRow(new Object[]{
+                e.getCodigo(), e.getNombres(), e.getApellidos(), e.getDni(),
+                e.getCargo(), e.getSueldoBase(), e.getTelefono(), e.isActivo() ? "Activo" : "Inactivo"
+            });
+        }
     }
 
     private void initComponents() {
@@ -55,8 +67,8 @@ public class IFrmFichaEmpleados extends JInternalFrame {
         txtDni = new JTextField();
         txtTelefono = new JTextField();
         txtCorreo = new JTextField();
-        txtDireccion = new JTextField();
-        cbCargo = new JComboBox<>(new String[]{"Vendedor", "Cajero", "Supervisor", "Administrador", "Almacenero"});
+        txtTurno = new JTextField();
+        cbCargo = new JComboBox<>(new String[]{"Vendedor", "Cajero", "Supervisor", "Administrador", "Almacenero", "Contador", "Gerente"});
         txtSalario = new JTextField();
         cbEstado = new JComboBox<>(new String[]{"Activo", "Inactivo"});
 
@@ -126,9 +138,9 @@ public class IFrmFichaEmpleados extends JInternalFrame {
         pnlForm.add(txtCorreo, gbc);
 
         gbc.gridx = 0; gbc.gridy = 6;
-        pnlForm.add(new JLabel("Direcci\u00f3n:"), gbc);
+        pnlForm.add(new JLabel("Turno:"), gbc);
         gbc.gridx = 1;
-        pnlForm.add(txtDireccion, gbc);
+        pnlForm.add(txtTurno, gbc);
 
         gbc.gridx = 0; gbc.gridy = 7;
         pnlForm.add(new JLabel("Cargo:"), gbc);
@@ -161,15 +173,56 @@ public class IFrmFichaEmpleados extends JInternalFrame {
 
     private void attachEvents() {
         btnBuscar.addActionListener(e -> {
-            // TODO: l\u00f3gica TXT para buscar empleados por nombre, DNI o cargo en empleados.txt
+            String buscar = txtBuscar.getText().toLowerCase();
+            modelEmpleados.setRowCount(0);
+            Modelo.EmpleadoDAO dao = new Modelo.EmpleadoDAO();
+            for (Clases.Empleado emp : dao.listarTodos()) {
+                if (emp.getNombres().toLowerCase().contains(buscar) || 
+                    emp.getApellidos().toLowerCase().contains(buscar) || 
+                    emp.getDni().contains(buscar)) {
+                    modelEmpleados.addRow(new Object[]{
+                        emp.getCodigo(), emp.getNombres(), emp.getApellidos(), emp.getDni(),
+                        emp.getCargo(), emp.getSueldoBase(), emp.getTelefono(), emp.isActivo() ? "Activo" : "Inactivo"
+                    });
+                }
+            }
         });
 
         btnGuardar.addActionListener(e -> {
-            // TODO: l\u00f3gica TXT para crear o actualizar un empleado
+            Modelo.EmpleadoDAO dao = new Modelo.EmpleadoDAO();
+            boolean isNuevo = txtId.getText().isEmpty();
+            String codigo = isNuevo ? dao.generarCodigo() : txtId.getText();
+            
+            try {
+                Clases.Empleado emp = new Clases.Empleado(
+                    codigo,
+                    txtDni.getText(),
+                    txtNombre.getText(),
+                    txtApellido.getText(),
+                    cbCargo.getSelectedItem().toString(),
+                    new java.util.Date(), // Fecha ingreso (hoy por defecto)
+                    new java.math.BigDecimal(txtSalario.getText()),
+                    txtTurno.getText(),
+                    txtTelefono.getText(),
+                    txtCorreo.getText(),
+                    cbEstado.getSelectedIndex() == 0
+                );
+                
+                boolean exito = isNuevo ? dao.guardar(emp) : dao.actualizar(emp);
+                if (exito) {
+                    JOptionPane.showMessageDialog(this, "Empleado guardado correctamente.");
+                    cargarEmpleados();
+                    btnLimpiar.doClick();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al guardar el empleado.");
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Por favor verifique que los datos sean correctos. (Ej. Salario numérico)");
+            }
         });
 
         btnEliminar.addActionListener(e -> {
-            // TODO: l\u00f3gica TXT para eliminar empleado (cambiar estado a 0)
+            JOptionPane.showMessageDialog(this, "La eliminación física de empleados no está permitida. Cambie su estado a Inactivo.");
         });
 
         btnLimpiar.addActionListener(e -> {
@@ -179,29 +232,33 @@ public class IFrmFichaEmpleados extends JInternalFrame {
             txtDni.setText("");
             txtTelefono.setText("");
             txtCorreo.setText("");
-            txtDireccion.setText("");
+            txtTurno.setText("");
             cbCargo.setSelectedIndex(0);
             txtSalario.setText("");
             cbEstado.setSelectedIndex(0);
+            tblEmpleados.clearSelection();
         });
 
         tblEmpleados.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tblEmpleados.getSelectedRow() != -1) {
                 int row = tblEmpleados.getSelectedRow();
-                txtId.setText(modelEmpleados.getValueAt(row, 0).toString());
-                txtNombre.setText(modelEmpleados.getValueAt(row, 1).toString());
-                txtApellido.setText(modelEmpleados.getValueAt(row, 2).toString());
-                txtDni.setText(modelEmpleados.getValueAt(row, 3).toString());
-                String cargo = modelEmpleados.getValueAt(row, 4).toString();
-                for (int i = 0; i < cbCargo.getItemCount(); i++) {
-                    if (cbCargo.getItemAt(i).equals(cargo)) {
-                        cbCargo.setSelectedIndex(i);
+                String codigo = modelEmpleados.getValueAt(row, 0).toString();
+                Modelo.EmpleadoDAO dao = new Modelo.EmpleadoDAO();
+                for (Clases.Empleado emp : dao.listarTodos()) {
+                    if (emp.getCodigo().equals(codigo)) {
+                        txtId.setText(emp.getCodigo());
+                        txtNombre.setText(emp.getNombres());
+                        txtApellido.setText(emp.getApellidos());
+                        txtDni.setText(emp.getDni());
+                        txtTelefono.setText(emp.getTelefono());
+                        txtCorreo.setText(emp.getEmail());
+                        txtTurno.setText(emp.getTurno());
+                        txtSalario.setText(emp.getSueldoBase().toString());
+                        cbCargo.setSelectedItem(emp.getCargo());
+                        cbEstado.setSelectedIndex(emp.isActivo() ? 0 : 1);
                         break;
                     }
                 }
-                txtSalario.setText(modelEmpleados.getValueAt(row, 5).toString());
-                txtTelefono.setText(modelEmpleados.getValueAt(row, 6).toString());
-                cbEstado.setSelectedItem(modelEmpleados.getValueAt(row, 7).toString());
             }
         });
     }

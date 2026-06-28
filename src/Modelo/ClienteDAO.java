@@ -12,10 +12,10 @@ import java.util.List;
 /**
  * DAO para la entidad Cliente.
  *
- * CORRECCIONES APLICADAS (2026-06-26T00:53:00-05:00 â€” AuditorÃ­a ERP):
+ * CORRECCIONES APLICADAS (2026-06-26T00:53:00-05:00 â€” Auditoría ERP):
  *   - `e.printStackTrace()` â†’ `LoggerGlobal.error()` (observabilidad en .jar).
- *   - `SELECT *` â†’ columnas explÃ­citas (incluye la columna `puntos` de forma explÃ­cita).
- *   - Eliminada la clÃ¡usula try/catch interna para `puntos` que enmascaraba errores.
+ *   - `SELECT *` â†’ columnas explícitas (incluye la columna `puntos` de forma explícita).
+ *   - Eliminada la cláusula try/catch interna para `puntos` que enmascaraba errores.
  *     (INSTRUCCIONES_IA_PROYECTO_ERP Â§2.A, Â§3.C)
  */
 public class ClienteDAO {
@@ -38,11 +38,11 @@ public class ClienteDAO {
                         rs.getString("direccion"),
                         rs.getInt("estado")
                 );
-                c.setPuntos(rs.getInt("puntos")); // Columna explÃ­cita â€” ya no necesita try/catch propio
+                c.setPuntos(rs.getInt("puntos")); // Columna explícita â€” ya no necesita try/catch propio
                 lista.add(c);
             }
         } catch (SQLException ex) {
-            LoggerGlobal.error("ClienteDAO.listarTodos() fallÃ³", ex);
+            LoggerGlobal.error("ClienteDAO.listarTodos() falló", ex);
         }
         return lista;
     }
@@ -64,7 +64,7 @@ public class ClienteDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ClienteDAO.actualizar() fallÃ³ para id=" + c.getIdCliente(), ex);
+            LoggerGlobal.error("ClienteDAO.actualizar() falló para id=" + c.getIdCliente(), ex);
             return false;
         }
     }
@@ -86,7 +86,7 @@ public class ClienteDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ClienteDAO.guardar() fallÃ³ para DNI=" + c.getDni(), ex);
+            LoggerGlobal.error("ClienteDAO.guardar() falló para DNI=" + c.getDni(), ex);
             return false;
         }
     }
@@ -98,7 +98,7 @@ public class ClienteDAO {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ClienteDAO.eliminar() fallÃ³ para id=" + id, ex);
+            LoggerGlobal.error("ClienteDAO.eliminar() falló para id=" + id, ex);
             return false;
         }
     }
@@ -110,7 +110,7 @@ public class ClienteDAO {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException ex) {
-            LoggerGlobal.error("ClienteDAO.generarId() fallÃ³", ex);
+            LoggerGlobal.error("ClienteDAO.generarId() falló", ex);
         }
         return 1;
     }
@@ -122,7 +122,7 @@ public class ClienteDAO {
      *
      * @param dni         DNI del cliente.
      * @param deltaPuntos Puntos a sumar (positivo) o restar (negativo).
-     * @return true si se actualizÃ³ correctamente.
+     * @return true si se actualizó correctamente.
      */
     public boolean actualizarPuntosPorDni(String dni, int deltaPuntos) {
         if (dni == null || dni.isEmpty() || "00000000".equals(dni)) {
@@ -135,12 +135,12 @@ public class ClienteDAO {
             ps.setString(2, dni);
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ClienteDAO.actualizarPuntosPorDni() fallÃ³ para DNI=" + dni, ex);
+            LoggerGlobal.error("ClienteDAO.actualizarPuntosPorDni() falló para DNI=" + dni, ex);
             return false;
         }
     }
 
-    // â”€â”€ FR-016: bÃºsqueda exacta por DNI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â”€â”€ FR-016: búsqueda exacta por DNI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public Cliente buscarPorDni(String dni) {
         String sql = "SELECT idCliente,nombre,apellido,dni,telefono,direccion,estado,puntos FROM tb_cliente WHERE dni=?";
         try (Connection conn = ConexionDB.getConexion();
@@ -177,7 +177,7 @@ public class ClienteDAO {
         return false;
     }
 
-    /** BÃºsqueda dinÃ¡mica por nombre, apellido o DNI */
+    /** Búsqueda dinámica por nombre, apellido o DNI */
     public List<Cliente> buscarPorNombre(String termino) {
         List<Cliente> lista = new ArrayList<>();
         String sql = "SELECT idCliente,nombre,apellido,dni,telefono,direccion,estado,puntos " +
@@ -231,7 +231,7 @@ public class ClienteDAO {
     }
 
     /**
-     * FR-021 â€” Top N productos mÃ¡s comprados por un cliente.
+     * FR-021 â€” Top N productos más comprados por un cliente.
      * Retorna: {nombreProducto, totalUds(int), totalGastado(BigDecimal)}
      */
     public List<Object[]> topProductosPorCliente(String dniCliente, int topN) {

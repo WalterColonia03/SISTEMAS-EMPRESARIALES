@@ -12,7 +12,7 @@ public class ArchivoProductoTXT {
     //REUTILIZAMOS EL CODIGO DE ArchivoCategoriaTXT
     // Guarda los productos
     public void guardar(List<Producto> lista) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(archivo))) {
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(archivo), java.nio.charset.StandardCharsets.UTF_8))) {
 
             for (Producto p : lista) {
                 bw.write(
@@ -37,8 +37,7 @@ public class ArchivoProductoTXT {
     // GUARDAR TODA LA LISTA
     public void guardarLista(List<Producto> lista) {
 
-        try (BufferedWriter bw
-                = new BufferedWriter(new FileWriter(archivo))) {
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(archivo), java.nio.charset.StandardCharsets.UTF_8))) {
 
             for (Producto p : lista) {
 
@@ -71,7 +70,7 @@ public class ArchivoProductoTXT {
             return lista;
         }
 
-        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(archivo), java.nio.charset.StandardCharsets.UTF_8))) {
 
             String linea;
 

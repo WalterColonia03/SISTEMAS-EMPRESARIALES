@@ -13,15 +13,15 @@ import java.util.List;
 
 /**
  * IFrmGestionClientes â€” CRUD completo de clientes con historial de compras (FR-016),
- * productos mÃ¡s comprados (FR-021) y ranking VIP (FR-032).
+ * productos más comprados (FR-021) y ranking VIP (FR-032).
  *
  * Historias de Usuario implementadas:
  *   - 1000007 / 1000012  Registrar y gestionar clientes
  *   - FR-016             Historial de compras por cliente
- *   - FR-021             Top 5 productos mÃ¡s comprados por cliente
+ *   - FR-021             Top 5 productos más comprados por cliente
  *   - FR-032             Ranking VIP de clientes
  *
- * RediseÃ±ado con UIKit (INSTRUCCIONES_IA Â§2.B).
+ * Rediseñado con UIKit (INSTRUCCIONES_IA Â§2.B).
  * Creado: 2026-06-26 | Actualizado: 2026-06-26
  */
 public class IFrmGestionClientes extends JInternalFrame {
@@ -39,7 +39,7 @@ public class IFrmGestionClientes extends JInternalFrame {
     private JButton btnHistorial, btnTopProductos, btnRankingVip;
 
     public IFrmGestionClientes() {
-        super("GestiÃ³n de Clientes", true, true, true, true);
+        super("Gestión de Clientes", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
@@ -55,7 +55,7 @@ public class IFrmGestionClientes extends JInternalFrame {
         txtBuscar.setPreferredSize(new Dimension(220, 36));
         txtBuscar.putClientProperty("JTextField.placeholderText", "Buscar por nombre, apellido o DNI...");
 
-        String[] columns = {"ID", "Nombre", "Apellido", "DNI", "TelÃ©fono", "Correo/Dir.", "Puntos"};
+        String[] columns = {"ID", "Nombre", "Apellido", "DNI", "Teléfono", "Correo/Dir.", "Puntos"};
         modelClientes = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -84,7 +84,7 @@ public class IFrmGestionClientes extends JInternalFrame {
                 new EmptyBorder(UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
 
         getContentPane().add(
-                UIKit.screenHeader("GestiÃ³n de Clientes", "Clientes y Proveedores  â€º  Clientes"),
+                UIKit.screenHeader("Gestión de Clientes", "Clientes y Proveedores  >  Clientes"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
@@ -139,7 +139,7 @@ public class IFrmGestionClientes extends JInternalFrame {
         gbc.gridy = 5; gbc.gridx = 0; gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, UIKit.SPACE_SM);
         pnlForm.add(UIKit.fieldLabel("DNI"), gbc);
         gbc.gridx = 1; gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlForm.add(UIKit.fieldLabel("TelÃ©fono"), gbc);
+        pnlForm.add(UIKit.fieldLabel("Teléfono"), gbc);
 
         gbc.gridy = 6; gbc.gridx = 0; gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, UIKit.SPACE_SM);
         pnlForm.add(txtDni, gbc);
@@ -148,7 +148,7 @@ public class IFrmGestionClientes extends JInternalFrame {
 
         gbc.gridwidth = 2; gbc.gridy = 7; gbc.gridx = 0;
         gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlForm.add(UIKit.fieldLabel("Correo / DirecciÃ³n"), gbc);
+        pnlForm.add(UIKit.fieldLabel("Correo / Dirección"), gbc);
         gbc.gridy = 8; gbc.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
         pnlForm.add(txtCorreo, gbc);
 
@@ -173,7 +173,7 @@ public class IFrmGestionClientes extends JInternalFrame {
     // â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void attachEvents() {
-        // BÃºsqueda dinÃ¡mica (FR-016 / 1000012)
+        // Búsqueda dinámica (FR-016 / 1000012)
         btnBuscar.addActionListener(e -> {
             String t = txtBuscar.getText().trim();
             if (t.isEmpty()) { cargarTabla(dao.listarTodos()); return; }
@@ -192,13 +192,13 @@ public class IFrmGestionClientes extends JInternalFrame {
         // FR-016: historial de compras del cliente seleccionado
         btnHistorial.addActionListener(e -> mostrarHistorialCompras());
 
-        // FR-021: top 5 productos mÃ¡s comprados
+        // FR-021: top 5 productos más comprados
         btnTopProductos.addActionListener(e -> mostrarTopProductos());
 
         // FR-032: ranking VIP top 10
         btnRankingVip.addActionListener(e -> mostrarRankingVip());
 
-        // SelecciÃ³n en tabla â†’ cargar en formulario
+        // Selección en tabla â†’ cargar en formulario
         tblClientes.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && tblClientes.getSelectedRow() != -1) {
                 int row = tblClientes.getSelectedRow();
@@ -212,7 +212,7 @@ public class IFrmGestionClientes extends JInternalFrame {
         });
     }
 
-    // â”€â”€ LÃ³gica de negocio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â”€â”€ Lógica de negocio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void guardarCliente() {
         String nombre   = txtNombre.getText().trim();
@@ -223,11 +223,11 @@ public class IFrmGestionClientes extends JInternalFrame {
 
         // Validaciones (1000007 CA-2)
         if (nombre.isEmpty() || apellido.isEmpty() || dni.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "âš  Nombre, Apellido y DNI son obligatorios.", "ValidaciÃ³n", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "âš  Nombre, Apellido y DNI son obligatorios.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
         if (dni.length() != 8 && dni.length() != 11) {
-            JOptionPane.showMessageDialog(this, "âš  El DNI debe tener 8 dÃ­gitos (persona natural) o RUC 11 dÃ­gitos.", "ValidaciÃ³n", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "âš  El DNI debe tener 8 dígitos (persona natural) o RUC 11 dígitos.", "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -256,12 +256,12 @@ public class IFrmGestionClientes extends JInternalFrame {
 
     private void eliminarCliente() {
         if (txtId.getText().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "âš  Seleccione un cliente de la tabla para eliminar.", "Sin selecciÃ³n", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "âš  Seleccione un cliente de la tabla para eliminar.", "Sin selección", JOptionPane.WARNING_MESSAGE);
             return;
         }
         int id = Integer.parseInt(txtId.getText());
         int confirmar = JOptionPane.showConfirmDialog(this,
-            "Â¿Eliminar al cliente con ID " + id + "?", "Confirmar eliminaciÃ³n", JOptionPane.YES_NO_OPTION);
+            "Â¿Eliminar al cliente con ID " + id + "?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
         if (confirmar == JOptionPane.YES_OPTION) {
             if (dao.eliminar(id)) {
                 JOptionPane.showMessageDialog(this, "âœ… Cliente eliminado correctamente.");
@@ -279,7 +279,7 @@ public class IFrmGestionClientes extends JInternalFrame {
     private void mostrarHistorialCompras() {
         String dni = txtDni.getText().trim();
         if (dni.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "âš  Seleccione un cliente de la tabla primero.", "Sin selecciÃ³n", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "âš  Seleccione un cliente de la tabla primero.", "Sin selección", JOptionPane.WARNING_MESSAGE);
             return;
         }
         List<Object[]> ventas = new Modelo.VentaDAO().ventasPorCliente(dni);
@@ -298,11 +298,11 @@ public class IFrmGestionClientes extends JInternalFrame {
             JOptionPane.PLAIN_MESSAGE);
     }
 
-    /** FR-021 â€” Top 5 productos mÃ¡s comprados por el cliente seleccionado */
+    /** FR-021 â€” Top 5 productos más comprados por el cliente seleccionado */
     private void mostrarTopProductos() {
         String dni = txtDni.getText().trim();
         if (dni.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "âš  Seleccione un cliente de la tabla primero.", "Sin selecciÃ³n", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "âš  Seleccione un cliente de la tabla primero.", "Sin selección", JOptionPane.WARNING_MESSAGE);
             return;
         }
         List<Object[]> top = dao.topProductosPorCliente(dni, 5);

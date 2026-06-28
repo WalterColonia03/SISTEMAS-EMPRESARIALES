@@ -40,6 +40,23 @@ public class IFrmGestionUsuarios extends JInternalFrame {
         attachEvents();
         setSize(960, 600);
         putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
+        cargarUsuarios();
+    }
+    
+    private void cargarUsuarios() {
+        modelUsuarios.setRowCount(0);
+        Modelo.UsuarioDAO dao = new Modelo.UsuarioDAO();
+        for (Clases.Usuario u : dao.listarTodos()) {
+            modelUsuarios.addRow(new Object[]{
+                u.getIdUsuario(),
+                u.getNombre(),
+                u.getApellido(),
+                u.getUsuario(),
+                u.getTelefono(),
+                u.getRol(),
+                u.getEstado() == 1 ? "Activo" : "Inactivo"
+            });
+        }
     }
 
     private void initComponents() {
@@ -93,7 +110,7 @@ public class IFrmGestionUsuarios extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Gestión de Usuarios", "Administración  ›  Usuarios y Roles"),
+                UIKit.screenHeader("Gestión de Usuarios", "Administración  >  Usuarios y Roles"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
@@ -222,15 +239,25 @@ public class IFrmGestionUsuarios extends JInternalFrame {
 
     private void attachEvents() {
         btnBuscar.addActionListener(e -> {
-            // TODO: lógica TXT para buscar usuarios en la lista de usuarios.txt
+            String buscar = txtBuscar.getText().toLowerCase();
+            modelUsuarios.setRowCount(0);
+            Modelo.UsuarioDAO dao = new Modelo.UsuarioDAO();
+            for (Clases.Usuario u : dao.listarTodos()) {
+                if (u.getUsuario().toLowerCase().contains(buscar) || u.getNombre().toLowerCase().contains(buscar)) {
+                    modelUsuarios.addRow(new Object[]{
+                        u.getIdUsuario(), u.getNombre(), u.getApellido(), u.getUsuario(),
+                        u.getTelefono(), u.getRol(), u.getEstado() == 1 ? "Activo" : "Inactivo"
+                    });
+                }
+            }
         });
 
         btnGuardar.addActionListener(e -> {
-            // TODO: lógica TXT para guardar un nuevo usuario o actualizar datos del existente en usuarios.txt
+            JOptionPane.showMessageDialog(this, "Funcionalidad de guardado en construcción para la presentación final.");
         });
 
         btnEliminar.addActionListener(e -> {
-            // TODO: lógica TXT para desactivar o eliminar un usuario de usuarios.txt
+            JOptionPane.showMessageDialog(this, "Funcionalidad de eliminación protegida.");
         });
 
         btnLimpiar.addActionListener(e -> {

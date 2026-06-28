@@ -29,6 +29,7 @@ public class IFrmDevoluciones extends JInternalFrame {
     private JButton btnProcesar;
     private JButton btnLimpiar;
     private JButton btnBuscarVenta;
+    private JButton btnExportarPDF;
 
     public IFrmDevoluciones() {
         super("Control de Devoluciones", true, true, true, true);
@@ -63,6 +64,7 @@ public class IFrmDevoluciones extends JInternalFrame {
         btnBuscarVenta = UIKit.secondaryButton("Buscar Venta");
         btnProcesar = UIKit.primaryButton("Procesar Devolución");
         btnLimpiar = UIKit.secondaryButton("Limpiar");
+        btnExportarPDF = UIKit.secondaryButton("Exportar PDF");
     }
 
     private void buildLayout() {
@@ -73,7 +75,7 @@ public class IFrmDevoluciones extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Devoluciones", "Ventas  ›  Control de Devoluciones"),
+                UIKit.screenHeader("Devoluciones", "Ventas  >  Control de Devoluciones"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
@@ -82,7 +84,12 @@ public class IFrmDevoluciones extends JInternalFrame {
         // ── Panel Izquierdo: Tabla de Devoluciones Realizadas ──
         JPanel pnlTabla = UIKit.card();
         pnlTabla.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-        pnlTabla.add(UIKit.sectionHeader("Historial de Devoluciones (Kardex)", null), BorderLayout.NORTH);
+        
+        JPanel pnlTablaHeader = new JPanel(new BorderLayout());
+        pnlTablaHeader.setOpaque(false);
+        pnlTablaHeader.add(UIKit.sectionHeader("Historial de Devoluciones (Kardex)", null), BorderLayout.WEST);
+        pnlTablaHeader.add(btnExportarPDF, BorderLayout.EAST);
+        pnlTabla.add(pnlTablaHeader, BorderLayout.NORTH);
         
         JScrollPane scroll = new JScrollPane(tblDevoluciones);
         scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
@@ -233,5 +240,55 @@ public class IFrmDevoluciones extends JInternalFrame {
             cbMotivo.setSelectedIndex(0);
             cbTipoReembolso.setSelectedIndex(0);
         });
+
+        // FR-047: Historial de devoluciones exportable
+        btnExportarPDF.addActionListener(e -> generarPDF());
+    }
+
+    /**
+     * Genera un reporte PDF de las devoluciones.
+     * Implementa: FR-047
+     */
+    private void generarPDF() {
+        if (modelDevoluciones.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "No hay devoluciones para exportar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String nombreArchivo = "Reporte_Devoluciones_" + System.currentTimeMillis() + ".pdf";
+        try {
+            com.itextpdf.text.Document document = new com.itextpdf.text.Document();
+            com.itextpdf.text.pdf.PdfWriter.getInstance(document, new java.io.FileOutputStream(nombreArchivo));
+            document.open();
+
+            document.add(new com.itextpdf.text.Paragraph("MINIMARKET LAREDO - HISTORIAL DE DEVOLUCIONES"));
+            document.add(new com.itextpdf.text.Paragraph("Fecha de emisión: " + new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(new java.util.Date())));
+            document.add(new com.itextpdf.text.Paragraph(" "));
+
+            com.itextpdf.text.pdf.PdfPTable table = new com.itextpdf.text.pdf.PdfPTable(6);
+            table.setWidthPercentage(100);
+            
+            String[] cabeceras = {"ID Venta", "Producto", "Cant", "Motivo", "Reembolso", "Fecha"};
+            for (String cabecera : cabeceras) {
+                com.itextpdf.text.pdf.PdfPCell cell = new com.itextpdf.text.pdf.PdfPCell(new com.itextpdf.text.Phrase(cabecera));
+                cell.setBackgroundColor(new com.itextpdf.text.BaseColor(200, 200, 200));
+                table.addCell(cell);
+            }
+
+            for (int i = 0; i < modelDevoluciones.getRowCount(); i++) {
+                for (int j = 0; j < 6; j++) {
+                    Object val = modelDevoluciones.getValueAt(i, j);
+                    table.addCell(val == null ? "" : val.toString());
+                }
+            }
+
+            document.add(table);
+            document.close();
+            JOptionPane.showMessageDialog(this, "Devoluciones exportadas a PDF:\n" + nombreArchivo, "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_VENTAS, "EXPORTAR_DEVOLUCIONES_PDF", Utils.BitacoraService.OK, nombreArchivo);
+            
+        } catch (Exception ex) {
+            Utils.LoggerGlobal.logError(this.getClass().getName(), "generarPDF", "Error exportando", ex);
+            JOptionPane.showMessageDialog(this, "Error al generar el PDF: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

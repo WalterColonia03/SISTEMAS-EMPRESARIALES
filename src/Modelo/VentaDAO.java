@@ -20,7 +20,7 @@ import java.util.List;
  *   - `e.printStackTrace()` Ã¢â€ â€™ `LoggerGlobal.error()`.
  *   - `SELECT *` Ã¢â€ â€™ columnas explÃƒÂ­citas.
  *   - Import duplicado de SQLException eliminado.
- *     (INSTRUCCIONES_IA_PROYECTO_ERP Ã‚Â§2.A, Ã‚Â§3.C, Ã‚Â§4.1)
+ *     (INSTRUCCIONES_IA_PROYECTO_ERP ÂÂ§2.A, ÂÂ§3.C, ÂÂ§4.1)
  */
 public class VentaDAO {
 
@@ -191,7 +191,7 @@ public class VentaDAO {
 
     // FR-001 CA-1: total de ventas del dia actual (YYYY-MM-DD)
     public java.math.BigDecimal totalVentasHoy() {
-        String sql = "SELECT COALESCE(SUM(total), 0) FROM tb_venta WHERE DATE(fecha) = CURDATE()";
+        String sql = "SELECT COALESCE(SUM(total), 0) FROM tb_venta WHERE DATE(STR_TO_DATE(SUBSTRING(fecha, 1, 10), '%d/%m/%Y')) = CURDATE()";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -204,7 +204,7 @@ public class VentaDAO {
 
     // FR-001 CA-3: total de ventas de la semana en curso (lunes a domingo)
     public java.math.BigDecimal totalVentasSemana() {
-        String sql = "SELECT COALESCE(SUM(total), 0) FROM tb_venta WHERE YEARWEEK(fecha, 1) = YEARWEEK(CURDATE(), 1)";
+        String sql = "SELECT COALESCE(SUM(total), 0) FROM tb_venta WHERE YEARWEEK(STR_TO_DATE(SUBSTRING(fecha, 1, 10), '%d/%m/%Y'), 1) = YEARWEEK(CURDATE(), 1)";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -217,7 +217,7 @@ public class VentaDAO {
 
     // FR-001 CA-3: total de ventas del mes en curso
     public java.math.BigDecimal totalVentasMes() {
-        String sql = "SELECT COALESCE(SUM(total), 0) FROM tb_venta WHERE YEAR(fecha) = YEAR(CURDATE()) AND MONTH(fecha) = MONTH(CURDATE())";
+        String sql = "SELECT COALESCE(SUM(total), 0) FROM tb_venta WHERE YEAR(STR_TO_DATE(SUBSTRING(fecha, 1, 10), '%d/%m/%Y')) = YEAR(CURDATE()) AND MONTH(STR_TO_DATE(SUBSTRING(fecha, 1, 10), '%d/%m/%Y')) = MONTH(CURDATE())";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -230,7 +230,7 @@ public class VentaDAO {
 
     // FR-001: conteo de transacciones del dia
     public int conteoVentasHoy() {
-        String sql = "SELECT COUNT(*) FROM tb_venta WHERE DATE(fecha) = CURDATE()";
+        String sql = "SELECT COUNT(*) FROM tb_venta WHERE DATE(STR_TO_DATE(SUBSTRING(fecha, 1, 10), '%d/%m/%Y')) = CURDATE()";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {

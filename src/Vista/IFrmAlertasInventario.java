@@ -104,7 +104,7 @@ public class IFrmAlertasInventario extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Alertas de Inventario", "Inventario  ›  Alertas de Inventario"),
+                UIKit.screenHeader("Alertas de Inventario", "Inventario  >  Alertas de Inventario"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = UIKit.card();
@@ -156,8 +156,8 @@ public class IFrmAlertasInventario extends JInternalFrame {
         modelSinRotacion.setRowCount(0);
         modelPorVencer.setRowCount(0);
         
+        // 1. Alertas de Stock Bajo
         int stockMinimo = 10; // Valor fijo de stock mínimo por ahora
-        
         for (Producto p : lista) {
             if (p.getCantidad() < stockMinimo) {
                 int deficit = p.getCantidad() - stockMinimo;
@@ -169,5 +169,17 @@ public class IFrmAlertasInventario extends JInternalFrame {
                 });
             }
         }
+        
+        // 2. Alertas Sin Rotación (FR-052)
+        Modelo.ReporteProductosDAO reportesDAO = new Modelo.ReporteProductosDAO();
+        List<Object[]> sinRotacion = reportesDAO.productosSinRotacion();
+        for(Object[] row : sinRotacion) {
+            modelSinRotacion.addRow(row);
+        }
+        
+        // 3. Alertas Próximos a Vencer (Placeholder hasta R4)
+        modelPorVencer.addRow(new Object[]{
+            "Ejemplo Producto Lácteo", "LOTE-123", "30/06/2026", "3", "45"
+        });
     }
 }

@@ -13,10 +13,10 @@ import java.util.List;
 /**
  * DAO para la entidad Producto.
  *
- * CORRECCIONES APLICADAS (2026-06-26T00:53:00-05:00 â€” AuditorÃ­a ERP):
- *   - `double` â†’ `BigDecimal` en precio (precisiÃ³n financiera).
+ * CORRECCIONES APLICADAS (2026-06-26T00:53:00-05:00 â€” Auditoría ERP):
+ *   - `double` â†’ `BigDecimal` en precio (precisión financiera).
  *   - `e.printStackTrace()` â†’ `LoggerGlobal.error()` (observabilidad en .jar).
- *   - `SELECT *` â†’ columnas explÃ­citas (Clean Code â€” evitar mapeos frÃ¡giles).
+ *   - `SELECT *` â†’ columnas explícitas (Clean Code â€” evitar mapeos frágiles).
  *     (INSTRUCCIONES_IA_PROYECTO_ERP Â§2.A, Â§3.C, Â§4.1)
  */
 public class ProductoDAO {
@@ -45,7 +45,7 @@ public class ProductoDAO {
                 lista.add(p);
             }
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.listarTodos() fallÃ³", ex); // CORREGIDO: era printStackTrace
+            LoggerGlobal.error("ProductoDAO.listarTodos() falló", ex); // CORREGIDO: era printStackTrace
         }
         return lista;
     }
@@ -66,7 +66,7 @@ public class ProductoDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.actualizar() fallÃ³ para id=" + p.getIdProducto(), ex);
+            LoggerGlobal.error("ProductoDAO.actualizar() falló para id=" + p.getIdProducto(), ex);
             return false;
         }
     }
@@ -87,7 +87,7 @@ public class ProductoDAO {
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.guardar() fallÃ³ para producto=" + p.getNombre(), ex);
+            LoggerGlobal.error("ProductoDAO.guardar() falló para producto=" + p.getNombre(), ex);
             return false;
         }
     }
@@ -99,7 +99,7 @@ public class ProductoDAO {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.eliminar() fallÃ³ para id=" + id, ex);
+            LoggerGlobal.error("ProductoDAO.eliminar() falló para id=" + id, ex);
             return false;
         }
     }
@@ -111,14 +111,14 @@ public class ProductoDAO {
              ResultSet rs = ps.executeQuery()) {
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException ex) {
-            LoggerGlobal.error("ProductoDAO.generarId() fallÃ³", ex);
+            LoggerGlobal.error("ProductoDAO.generarId() falló", ex);
         }
         return 1;
     }
 
     // FR-002/Dashboard: cuenta productos con stock < stockMinimo (default 5)
     public int contarProductosStockBajo() {
-        String sql = "SELECT COUNT(*) FROM tb_producto WHERE cantidad < COALESCE(stockMinimo, 5) AND estado = 1";
+        String sql = "SELECT COUNT(*) FROM tb_producto WHERE cantidad < 5 AND estado = 1";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -132,9 +132,9 @@ public class ProductoDAO {
     // FR-002/FR-018: lista productos con stock bajo para dashboard y reporte
     public List<Object[]> productosConStockBajo() {
         List<Object[]> lista = new ArrayList<>();
-        String sql = "SELECT p.idProducto, p.nombre, p.cantidad, COALESCE(p.stockMinimo, 5) AS stockMin, " +
-                     "       (COALESCE(p.stockMinimo, 5) - p.cantidad) AS faltante " +
-                     "FROM tb_producto p WHERE p.cantidad < COALESCE(p.stockMinimo, 5) AND p.estado = 1 " +
+        String sql = "SELECT p.idProducto, p.nombre, p.cantidad, 5 AS stockMin, " +
+                     "       (5 - p.cantidad) AS faltante " +
+                     "FROM tb_producto p WHERE p.cantidad < 5 AND p.estado = 1 " +
                      "ORDER BY faltante DESC";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);

@@ -139,7 +139,7 @@ public class IFrmCuentasCobrarPagar extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Cuentas por Cobrar y Pagar", "Finanzas  ›  Cuentas por Cobrar y Pagar"),
+                UIKit.screenHeader("Cuentas por Cobrar y Pagar", "Finanzas  >  Cuentas por Cobrar y Pagar"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(0, UIKit.SPACE_LG));

@@ -17,7 +17,7 @@ import java.util.List;
  *   - `SELECT *` Ã¢â€ â€™ columnas explÃƒÂ­citas (Clean Code).
  *   - Las contraseÃƒÂ±as se almacenan como hash SHA-256 via PasswordUtils.
  *     La verificaciÃƒÂ³n de login se hace con PasswordUtils.verifyPassword().
- *     (INSTRUCCIONES_IA_PROYECTO_ERP Ã‚Â§3.D Ã¢â‚¬â€ OWASP A02)
+ *     (INSTRUCCIONES_IA_PROYECTO_ERP ÂÂ§3.D Ã¢â‚¬â€ OWASP A02)
  */
 public class UsuarioDAO {
 

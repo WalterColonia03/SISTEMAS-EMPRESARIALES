@@ -11,7 +11,7 @@ public class ArchivoCategoriaTXT {
 
     // Guarda las categorias
     public void guardar(List<Categoria> lista) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(archivo))) {
+        try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(archivo), java.nio.charset.StandardCharsets.UTF_8))) {
 
             for (Categoria c : lista) {
                 bw.write(
@@ -36,7 +36,7 @@ public class ArchivoCategoriaTXT {
             return lista;
         }
         // El try catch evita que mi progama se rompa o se cierre si hay un error(el error solo se muentra en consola pero el progama sigue)
-        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(archivo), java.nio.charset.StandardCharsets.UTF_8))) {
 
             String linea;
 

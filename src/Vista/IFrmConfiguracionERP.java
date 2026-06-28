@@ -80,7 +80,7 @@ public class IFrmConfiguracionERP extends JInternalFrame {
 
         // ===== Encabezado =====
         getContentPane().add(
-                UIKit.screenHeader("Configuración", "Administración  ›  Configuración ERP"),
+                UIKit.screenHeader("Configuración", "Administración  >  Configuración ERP"),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new GridLayout(1, 2, UIKit.SPACE_LG, 0));

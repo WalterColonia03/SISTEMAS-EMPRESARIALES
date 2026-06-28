@@ -198,6 +198,35 @@
 
 ---
 
+---
+
+### `FR-051` — Regulación de Venta con DNI por S/ 700 (Regla SUNAT)
+- **Como** Cajero del Minimarket LAREDO
+- **Quiero** que el sistema valide si la compra llega o supera los S/ 700.00
+- **Para** exigir el DNI del cliente y cumplir con las normativas legales de SUNAT/Indecopi
+
+| # | Given | When | Then |
+|---|-------|------|------|
+| CA-1 | El total de la venta es >= S/ 700 y el cliente es "Consumidor Final" | El Cajero presiona "Realizar Venta" | El sistema bloquea la venta y muestra: "Por ley de SUNAT, compras a partir de S/ 700.00 exigen DNI o RUC" |
+| CA-2 | El total de la venta es >= S/ 700 y el cliente tiene un DNI ingresado | El Cajero presiona "Realizar Venta" | El sistema permite continuar con la venta |
+| CA-3 | El total de la venta es < S/ 700 y el cliente es "Consumidor Final" | El Cajero presiona "Realizar Venta" | El sistema permite continuar con la venta |
+
+> **SP:** 1 · **MoSCoW:** Must · **IT:** IT-11 · **Regla Legal:** Res. de Superintendencia N° 239-2018/SUNAT
+
+---
+
+### `FR-052` — Monitor de Alertas: Sin Rotación y Próximos a Vencer
+- **Como** Encargado de Almacén del Minimarket LAREDO
+- **Quiero** ver un monitor que me alerte de productos sin rotación en los últimos 30 días y productos próximos a vencer
+- **Para** tomar acciones preventivas (ofertas, devoluciones a proveedor) y no perder dinero
+
+| # | Given | When | Then |
+|---|-------|------|------|
+| CA-1 | Existen productos sin ventas ni compras en los últimos 30 días | El usuario abre Alertas de Inventario -> Sin Rotación | El sistema muestra los productos inactivos y el número de días desde su última venta |
+| CA-2 | Existen productos con fechaVencimiento <= 30 días | El usuario abre Alertas de Inventario -> Próximos a Vencer | El sistema lista los productos y pinta en rojo los que vencen en < 10 días |
+
+> **SP:** 3 · **MoSCoW:** Must · **IT:** IT-11
+
 ## SECCIÓN 4 — Plan de Implementación IT-11 + IT-13
 
 ### Orden de implementación (priorizado por dependencias)

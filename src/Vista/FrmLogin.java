@@ -15,13 +15,13 @@ import Clases.Usuario;
 import Modelo.BitacoraDAO;
 import Modelo.UsuarioDAO;
 import Utils.LoggerGlobal;
-import Utils.PasswordUtils;         // CORREGIDO: importado para verificaciÃ³n segura de contraseÃ±as
+import Utils.PasswordUtils;         // CORREGIDO: importado para verificación segura de contraseñas
 import Vista.Estilos.UIKit;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.FlatClientProperties;
 
 /**
- * FrmLogin - Pantalla de inicio de sesiÃ³n moderna y sin bordes (PatrÃ³n G).
+ * FrmLogin - Pantalla de inicio de sesión moderna y sin bordes (Patrón G).
  */
 public class FrmLogin extends JFrame {
 
@@ -41,7 +41,7 @@ public class FrmLogin extends JFrame {
 
     public FrmLogin() {
         super("ERP Minimarket LAREDO");
-        setUndecorated(true); // Sin bordes del SO
+        // La ventana ahora tiene decoraciones del SO (minimizar, maximizar, cerrar)
         initComponents();
         buildLayout();
         attachEvents();
@@ -103,7 +103,7 @@ public class FrmLogin extends JFrame {
         pnlLeft.add(lblBrand, gbcLeft);
 
         gbcLeft.gridy = 2;
-        JLabel lblSlogan = new JLabel("Sistema de GestiÃ³n Empresarial");
+        JLabel lblSlogan = new JLabel("Sistema de Gestión Empresarial");
         lblSlogan.setFont(UIKit.SUBTITLE);
         lblSlogan.setForeground(new Color(255, 255, 255, 180));
         pnlLeft.add(lblSlogan, gbcLeft);
@@ -124,7 +124,7 @@ public class FrmLogin extends JFrame {
         gbc.anchor  = GridBagConstraints.CENTER;
         gbc.weightx = 1.0;
 
-        // TÃ­tulo
+        // Título
         gbc.gridy  = 0;
         gbc.insets = new Insets(0, 0, 30, 0);
         JLabel lblTitulo = new JLabel("Bienvenido", SwingConstants.CENTER);
@@ -142,27 +142,27 @@ public class FrmLogin extends JFrame {
         gbc.insets = new Insets(0, 0, 16, 0);
         pnlCard.add(txtUsuario, gbc);
 
-        // Etiqueta ContraseÃ±a
+        // Etiqueta Contraseña
         gbc.gridy  = 3;
         gbc.insets = new Insets(0, 0, 5, 0);
-        pnlCard.add(UIKit.fieldLabel("ContraseÃ±a"), gbc);
+        pnlCard.add(UIKit.fieldLabel("Contraseña"), gbc);
 
-        // Campo ContraseÃ±a
+        // Campo Contraseña
         gbc.gridy  = 4;
         gbc.insets = new Insets(0, 0, 30, 0);
         pnlCard.add(txtPassword, gbc);
 
-        // BotÃ³n Ingresar
+        // Botón Ingresar
         gbc.gridy  = 5;
         gbc.insets = new Insets(0, 0, 20, 0);
         pnlCard.add(btnIngresar, gbc);
 
-        // BotÃ³n Salir
+        // Botón Salir
         gbc.gridy  = 6;
         gbc.insets = new Insets(0, 0, 20, 0);
         pnlCard.add(btnSalir, gbc);
 
-        // Pie de versiÃ³n
+        // Pie de versión
         gbc.gridy  = 7;
         gbc.insets = new Insets(10, 0, 0, 0);
         JLabel lblVersion = new JLabel("ERP v1.0.0 Â· Minimarket LAREDO Â© 2025", SwingConstants.CENTER);
@@ -177,28 +177,13 @@ public class FrmLogin extends JFrame {
     }
 
     private void attachEvents() {
-        // Permitir arrastrar la ventana undecorated
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                mouseX = e.getX();
-                mouseY = e.getY();
-            }
-        });
-        addMouseMotionListener(new MouseAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                int x = e.getXOnScreen();
-                int y = e.getYOnScreen();
-                setLocation(x - mouseX, y - mouseY);
-            }
-        });
+        // Lógica de arrastre manual eliminada, ahora se usa la barra de título del SO
 
         btnIngresar.addActionListener(e -> {
             String user = txtUsuario.getText().trim();
             if (user.isEmpty()) return;
 
-            // Verificar si el usuario estÃ¡ bloqueado
+            // Verificar si el usuario está bloqueado
             if (tiempoBloqueo.containsKey(user)) {
                 long bloqueadoHasta = tiempoBloqueo.get(user);
                 long restante = bloqueadoHasta - System.currentTimeMillis();
@@ -208,7 +193,7 @@ public class FrmLogin extends JFrame {
                     LoggerGlobal.log("Intento de login bloqueado para usuario: " + user);
                     return;
                 } else {
-                    // Desbloquear si ya pasÃ³ el tiempo
+                    // Desbloquear si ya pasó el tiempo
                     tiempoBloqueo.remove(user);
                     intentosFallidos.put(user, 0);
                 }
@@ -226,7 +211,7 @@ public class FrmLogin extends JFrame {
                 boolean encontrado = false;
 
                 for (Usuario u : lista) {
-                    // CORRECCIÃ“N OWASP A02: comparaciÃ³n con hash SHA-256, no texto plano
+                    // CORRECCIÓN OWASP A02: comparación con hash SHA-256, no texto plano
                     if (u.getUsuario().equals(user) && PasswordUtils.verifyPassword(pass, u.getPassword())) {
                         encontrado = true;
 
@@ -276,7 +261,7 @@ public class FrmLogin extends JFrame {
                             "Bloqueada tras " + MAX_INTENTOS + " intentos"
                         );
                         JOptionPane.showMessageDialog(this,
-                            "Usuario o contraseÃ±a incorrectos.\nCUENTA BLOQUEADA por 15 minutos.");
+                            "Usuario o contraseña incorrectos.\nCUENTA BLOQUEADA por 15 minutos.");
                     } else {
                         // FR-020-v2 CA-2: registrar intento fallido
                         Utils.BitacoraService.registrar(
@@ -287,7 +272,7 @@ public class FrmLogin extends JFrame {
                             "Intento " + intentos + " de " + MAX_INTENTOS
                         );
                         JOptionPane.showMessageDialog(this,
-                            "Usuario o contraseÃ±a incorrectos.\nIntentos restantes: " + (MAX_INTENTOS - intentos));
+                            "Usuario o contraseña incorrectos.\nIntentos restantes: " + (MAX_INTENTOS - intentos));
                     }
 
                     btnIngresar.setEnabled(true);
@@ -334,8 +319,9 @@ public class FrmLogin extends JFrame {
 
     public static void main(String[] args) {
         FlatLightLaf.setup();
+        JFrame.setDefaultLookAndFeelDecorated(true);
 
-        // Radios y overrides globales del sistema de diseÃ±o
+        // Radios y overrides globales del sistema de diseño
         UIManager.put("Button.arc", 8);
         UIManager.put("Component.arc", 8);
         UIManager.put("TextComponent.arc", 8);
@@ -347,6 +333,15 @@ public class FrmLogin extends JFrame {
         UIManager.put("Table.showVerticalLines", false);
         UIManager.put("Table.rowHeight", 34);
         UIManager.put("defaultFont", UIKit.BODY);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            String usuarioLogueado = Clases.Sesion.getUsuario();
+            if (usuarioLogueado != null && !usuarioLogueado.isEmpty()) {
+                UsuarioDAO dao = new UsuarioDAO();
+                dao.cambiarEstadoSesion(usuarioLogueado, 0);
+                Utils.LoggerGlobal.log("ShutdownHook: Sesión cerrada forzosamente para " + usuarioLogueado);
+            }
+        }));
 
         SwingUtilities.invokeLater(() -> new FrmLogin().setVisible(true));
     }
