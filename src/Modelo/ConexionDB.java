@@ -40,8 +40,13 @@ public class ConexionDB {
     }
 
     /**
-     * Retorna una conexión activa a la base de datos desde el pool.
-     * @throws SQLException si no se puede establecer la conexión.
+     * Retorna una conexión activa a la base de datos desde el pool de conexiones.
+     * Capa: Utilidad Transversal (Clases) — Implementa: RNF-09 (Concurrencia de 5 cajas).
+     * El pool administrado mediante LinkedBlockingQueue permite que los cajeros (hilos)
+     * obtengan conexiones sin bloquearse entre sí, resolviendo el problema de serialización.
+     * 
+     * @return Connection lista para usar en una transacción
+     * @throws SQLException si se agota el timeout de 3 segundos esperando conexión disponible
      */
     public static Connection getConexion() throws SQLException {
         try {
@@ -57,13 +62,12 @@ public class ConexionDB {
     }
 
     /**
-     * Devuelve la conexión al pool en lugar de cerrarla.
-     * Nota: En este proyecto, muchos DAO usan try-with-resources que llama a close().
-     * Para soportar un pool real, los DAO deberían llamar a devolverConexion o usar HikariCP.
-     * Dado que el código actual hace conn.close(), usaremos un proxy o simplemente
-     * dejaremos que close() la cierre y se recree on-demand, pero para mejorar el rendimiento
-     * interceptaremos o simplemente dejaremos HikariCP de lado por ahora creando bajo demanda
-     * si se agotan, que es mejor que un singleton bloqueante.
+     * Devuelve la conexión al pool en lugar de cerrarla físicamente.
+     * Capa: Utilidad Transversal — Implementa: RNF-01 (Rendimiento).
+     * Reutilizar conexiones activas evita el costo de establecer una nueva conexión TCP
+     * cada vez que un DAO requiere leer o escribir datos.
+     * 
+     * @param conn La conexión a devolver al pool
      */
     public static void devolverConexion(Connection conn) {
         if (conn != null) {

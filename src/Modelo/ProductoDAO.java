@@ -148,7 +148,15 @@ public class ProductoDAO {
         return lista;
     }
 
-    // Busca producto por ID (para evitar cargar toda la lista)
+    /**
+     * Busca un producto específico por su identificador único (ID).
+     * Capa: DAO — Implementa: FR-022 (Búsqueda en POS) y RNF-01 (Rendimiento).
+     * Se utiliza para obtener un solo producto desde la BD vía índice primario (WHERE idProducto),
+     * en lugar de cargar todos los productos en memoria (evita OOM y lentitud al usar lector de barras).
+     *
+     * @param id Identificador numérico del producto (código de barras)
+     * @return Instancia del Producto o null si no existe.
+     */
     public Producto buscarPorId(int id) {
         String sql = "SELECT idProducto,nombre,cantidad,precio,descripcion,idCategoria,estado FROM tb_producto WHERE idProducto = ?";
         try (Connection conn = ConexionDB.getConexion();

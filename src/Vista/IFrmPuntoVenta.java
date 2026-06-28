@@ -515,6 +515,9 @@ public class IFrmPuntoVenta extends JInternalFrame {
         // Canjear puntos
         btnCanjearPuntos.addActionListener(e -> {
             if (puntosActualesCliente >= 100) {
+                // Implementa: FR-030 (Fidelización) y MT-001 (Dinero en BigDecimal).
+                // Se usa BigDecimal para evitar pérdida de precisión al operar con decimales monetarios.
+                // La regla indica que el canje se hace en bloques de 100 puntos.
                 int puntosUsables = (puntosActualesCliente / 100) * 100;
                 descuentoPuntos = new BigDecimal(puntosUsables).divide(BigDecimal.valueOf(100));
                 puntosACanjear = puntosUsables;
@@ -662,6 +665,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
         
         lblSubtotal.setText("S/ " + total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
 
+        // Implementa: FR-031 (Descuento en venta). Restar los puntos canjeados del total a cobrar.
         total = total.subtract(descuentoPuntos);
         if (total.compareTo(BigDecimal.ZERO) < 0) total = BigDecimal.ZERO;
         
