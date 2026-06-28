@@ -50,14 +50,32 @@ public class ConexionDB {
      */
     public static Connection getConexion() throws SQLException {
         try {
-            Connection conn = pool.poll(3, java.util.concurrent.TimeUnit.SECONDS);
-            if (conn == null || conn.isClosed()) {
-                conn = DriverManager.getConnection(URL, USER, PASS);
+            // Se usa poll sin timeout prolongado para evitar latencia si el pool está vacío
+            Connection realConn = pool.poll();
+            if (realConn == null || realConn.isClosed()) {
+                realConn = DriverManager.getConnection(URL, USER, PASS);
             }
-            return conn;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new SQLException("Timeout esperando conexión disponible", e);
+            
+            final Connection targetConn = realConn;
+            
+            // Proxy dinámico para interceptar el método close() del try-with-resources
+            return (Connection) java.lang.reflect.Proxy.newProxyInstance(
+                Connection.class.getClassLoader(),
+                new Class<?>[]{Connection.class},
+                (proxy, method, args) -> {
+                    if ("close".equals(method.getName())) {
+                        devolverConexion(targetConn);
+                        return null;
+                    }
+                    try {
+                        return method.invoke(targetConn, args);
+                    } catch (java.lang.reflect.InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                }
+            );
+        } catch (Exception e) {
+            throw new SQLException("Error obteniendo conexión del pool", e);
         }
     }
 

@@ -65,14 +65,14 @@ public class IFrmReporteVentas extends JInternalFrame {
         txtFechaFin.setPreferredSize(new Dimension(140, 36));
         txtFechaFin.setDateFormatString("dd/MM/yyyy");
 
-        cbMetodoPago = new JComboBox<>(new String[]{"Todos", "Efectivo", "Yape", "Tarjeta"});
+        cbMetodoPago = new JComboBox<>(new String[]{"Todos", "Efectivo"});
         cbMetodoPago.setPreferredSize(new Dimension(150, 36));
         cbMetodoPago.setFont(UIKit.BODY);
 
         btnBuscar = UIKit.primaryButton("🔍 Filtrar");
         btnLimpiar = UIKit.secondaryButton("✕ Limpiar");
 
-        String[] columns = {"N°", "Fecha / Hora", "Cliente / Cajero", "Método", "Monto", "Yape Verif.", "Acción"};
+        String[] columns = {"N°", "Fecha / Hora", "Cliente / Cajero", "Método", "Monto", "Acción"};
         modelVentas = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int col) { return false; }
@@ -90,7 +90,7 @@ public class IFrmReporteVentas extends JInternalFrame {
         }
 
         // --- Renderizador de la columna Acción para parecer enlace ---
-        tblVentas.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
+        tblVentas.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -203,7 +203,7 @@ public class IFrmReporteVentas extends JInternalFrame {
             public void mouseClicked(MouseEvent e) {
                 int row = tblVentas.rowAtPoint(e.getPoint());
                 int col = tblVentas.columnAtPoint(e.getPoint());
-                if (row >= 0 && col == 6) { // Columna "Acción"
+                if (row >= 0 && col == 5) { // Columna "Acción"
                     String idVentaStr = tblVentas.getValueAt(row, 0).toString().replace("#", "");
                     String fecha = tblVentas.getValueAt(row, 1).toString();
                     String cliente = tblVentas.getValueAt(row, 2).toString();
@@ -306,9 +306,7 @@ public class IFrmReporteVentas extends JInternalFrame {
             
             if (!pasaFiltro) continue;
 
-            String metodo = "Efectivo"; 
-            if (v.getIdVenta() % 3 == 0) metodo = "Yape";
-            else if (v.getIdVenta() % 5 == 0) metodo = "Tarjeta";
+            String metodo = v.getMetodoPago() != null ? v.getMetodoPago() : "Efectivo";
             
             String metodoFiltro = cbMetodoPago.getSelectedItem().toString();
             if (!metodoFiltro.equals("Todos") && !metodoFiltro.equals(metodo)) continue;
@@ -316,15 +314,12 @@ public class IFrmReporteVentas extends JInternalFrame {
             totalVendido = totalVendido.add(v.getTotal());
             
             String idStr = String.format("#%06d", v.getIdVenta());
-            String yapeVerif = metodo.equals("Yape") ? "✓ Sí" : "—";
-            
             modelVentas.addRow(new Object[]{
                 idStr,
                 v.getFecha(),
                 v.getCliente() != null && !v.getCliente().isEmpty() ? v.getCliente() : "Consumidor Final",
                 metodo,
                 "S/. " + v.getTotal().setScale(2, RoundingMode.HALF_UP).toPlainString(),
-                yapeVerif,
                 "👁 Detalle"
             });
         }

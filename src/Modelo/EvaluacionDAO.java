@@ -27,7 +27,7 @@ public class EvaluacionDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.executeUpdate();
         } catch (Exception e) {
-            Utils.LoggerGlobal.logError(this.getClass().getName(), "crearTablaSiNoExiste", "Error creando tb_evaluaciones", e);
+            Utils.LoggerGlobal.error("Error creando tb_evaluaciones", e);
         }
     }
 
@@ -42,7 +42,7 @@ public class EvaluacionDAO {
             ps.executeUpdate();
             return true;
         } catch (Exception ex) {
-            Utils.LoggerGlobal.logError(this.getClass().getName(), "registrar", "Error registrando evaluación", ex);
+            Utils.LoggerGlobal.error("Error registrando evaluación", ex);
             return false;
         }
     }
@@ -65,7 +65,7 @@ public class EvaluacionDAO {
                 }
             }
         } catch (Exception ex) {
-            Utils.LoggerGlobal.logError(this.getClass().getName(), "listarPorEmpleado", "Error consultando evaluaciones", ex);
+            Utils.LoggerGlobal.error("Error consultando evaluaciones", ex);
         }
         return lista;
     }

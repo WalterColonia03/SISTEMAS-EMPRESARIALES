@@ -372,7 +372,7 @@ public class IFrmPlanillaAsistencia extends JInternalFrame {
             Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_RRHH, "EXPORTAR_PLANILLA_PDF", Utils.BitacoraService.OK, nombreArchivo);
 
         } catch (Exception ex) {
-            Utils.LoggerGlobal.logError(this.getClass().getName(), "generarPlanillaPDF", "Error generando PDF", ex);
+            Utils.LoggerGlobal.error("Error generando PDF", ex);
             JOptionPane.showMessageDialog(this, "Error al generar el PDF: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }

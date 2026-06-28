@@ -27,6 +27,9 @@ public class BitacoraService {
     public static final String MOD_USUARIOS  = "USUARIOS";
     public static final String MOD_FINANZAS  = "FINANZAS";
     public static final String MOD_REPORTES  = "REPORTES";
+    public static final String MOD_RRHH      = "RRHH";
+    public static final String MOD_SEGURIDAD = "SEGURIDAD";
+    public static final String MOD_VENTAS    = "VENTAS";
 
     // Constantes de resultado
     public static final String OK    = "EXITO";

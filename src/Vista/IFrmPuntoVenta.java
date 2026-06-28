@@ -98,7 +98,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
         cbComprobante = new JComboBox<>(new String[]{"Boleta Simple", "Factura"});
         cbComprobante.setPreferredSize(new Dimension(0, 36));
 
-        cbMetodoPago = new JComboBox<>(new String[]{"Efectivo", "Mercado Pago (QR)", "Tarjeta Débito", "Tarjeta Crédito", "Yape", "Plin"});
+        cbMetodoPago = new JComboBox<>(new String[]{"Efectivo"});
         cbMetodoPago.setPreferredSize(new Dimension(0, 36));
 
         txtMontoRecibido = UIKit.textField();
@@ -589,26 +589,13 @@ public class IFrmPuntoVenta extends JInternalFrame {
                         JOptionPane.showMessageDialog(this, "Monto recibido inválido. Ingrese solo números.", "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                } else {
-                    // Validación para pagos digitales (Yape, Tarjetas, etc)
-                    String montoStr = txtMontoRecibido.getText().trim().replace(",", ".");
-                    BigDecimal montoRecibido = new BigDecimal(montoStr);
-                    if (montoRecibido.compareTo(total) > 0) {
-                        JOptionPane.showMessageDialog(this, 
-                            "âš  Los pagos digitales (Yape, Plin, Tarjeta) deben ser por el monto EXACTO de la venta.\n\n" +
-                            "Si el cliente transfirió S/ " + montoRecibido.toPlainString() + " por error (S/ " + 
-                            montoRecibido.subtract(total).setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + " de más),\n" +
-                            "la devolución debe realizarse manualmente desde su aplicación bancaria\npara evitar descuadres en la contabilidad del sistema.", 
-                            "Sobrepago Digital Detectado", 
-                            JOptionPane.WARNING_MESSAGE);
-                        return;
-                    }
                 }
 
                 Venta v = new Venta();
                 v.setCliente(lblNombreCliente.getText());
                 v.setFecha(new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date()));
                 v.setTotal(total);
+                v.setMetodoPago(cbMetodoPago.getSelectedItem().toString());
 
                 for (int i = 0; i < modelCarrito.getRowCount(); i++) {
                     DetalleVenta d = new DetalleVenta();
@@ -620,7 +607,8 @@ public class IFrmPuntoVenta extends JInternalFrame {
 
                 VentaDAO dao = new VentaDAO();
                 if (dao.registrarVentaCompleta(v)) {
-                    Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_POS, "REGISTRO_VENTA", Utils.BitacoraService.OK, "Total: S/ " + total.toPlainString());
+                    String detalleBitacora = "Total: S/ " + total.toPlainString() + " | Método: " + cbMetodoPago.getSelectedItem().toString();
+                    Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_POS, "REGISTRO_VENTA", Utils.BitacoraService.OK, detalleBitacora);
                     String dniStr = txtDni.getText().trim();
                     if (!dniStr.isEmpty()) {
                         ClienteDAO cdao = new ClienteDAO();

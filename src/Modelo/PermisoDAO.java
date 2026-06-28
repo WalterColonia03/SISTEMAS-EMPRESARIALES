@@ -36,7 +36,7 @@ public class PermisoDAO {
                 }
             }
         } catch (Exception ex) {
-            Utils.LoggerGlobal.logError(this.getClass().getName(), "cargar", "Error leyendo permisos", ex);
+            Utils.LoggerGlobal.error("Error leyendo permisos", ex);
         }
     }
 
@@ -44,7 +44,7 @@ public class PermisoDAO {
         try (FileOutputStream fos = new FileOutputStream(RUTA_ARCHIVO)) {
             props.store(fos, "Configuración de Permisos por Rol - ERP LAREDO (FR-042)");
         } catch (Exception ex) {
-            Utils.LoggerGlobal.logError(this.getClass().getName(), "guardar", "Error guardando permisos", ex);
+            Utils.LoggerGlobal.error("Error guardando permisos", ex);
         }
     }
 

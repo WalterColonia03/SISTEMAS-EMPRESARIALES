@@ -287,7 +287,7 @@ public class IFrmDevoluciones extends JInternalFrame {
             Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_VENTAS, "EXPORTAR_DEVOLUCIONES_PDF", Utils.BitacoraService.OK, nombreArchivo);
             
         } catch (Exception ex) {
-            Utils.LoggerGlobal.logError(this.getClass().getName(), "generarPDF", "Error exportando", ex);
+            Utils.LoggerGlobal.error("Error exportando", ex);
             JOptionPane.showMessageDialog(this, "Error al generar el PDF: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }

@@ -22,15 +22,8 @@ public class IFrmConfiguracionERP extends JInternalFrame {
     private JTextField txtTelefonoEmpresa;
     private JTextField txtCorreoEmpresa;
 
-    // API Mercado Pago
-    private JPasswordField txtMpToken;
-    private JTextField txtMpPublicKey;
-    private JTextField txtMpClientId;
-
     private JButton btnGuardar;
     private JButton btnLimpiar;
-    private JButton btnTestMp;
-    private JButton btnOjoToken;
 
     public IFrmConfiguracionERP() {
         super("Configuración Global del ERP", true, true, true, true);
@@ -49,27 +42,9 @@ public class IFrmConfiguracionERP extends JInternalFrame {
         txtTelefonoEmpresa = UIKit.textField();
         txtCorreoEmpresa = UIKit.textField();
 
-        // API Mercado Pago
-        txtMpToken = new JPasswordField();
-        txtMpToken.setFont(UIKit.BODY);
-        txtMpToken.putClientProperty(FlatClientProperties.STYLE,
-                "arc: 8; borderColor: " + String.format("#%02x%02x%02x", UIKit.BORDER.getRed(), UIKit.BORDER.getGreen(), UIKit.BORDER.getBlue()) +
-                "; focusedBorderColor: " + String.format("#%02x%02x%02x", UIKit.ACCENT.getRed(), UIKit.ACCENT.getGreen(), UIKit.ACCENT.getBlue()) + ";");
-        txtMpToken.setPreferredSize(new Dimension(0, 36));
-
-        btnOjoToken = new JButton("👁");
-        btnOjoToken.setContentAreaFilled(false);
-        btnOjoToken.setBorderPainted(false);
-        btnOjoToken.setFocusPainted(false);
-        btnOjoToken.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        
-        txtMpPublicKey = UIKit.textField();
-        txtMpClientId = UIKit.textField();
-
         // Botones
         btnGuardar = UIKit.primaryButton("Guardar Configuración");
         btnLimpiar = UIKit.secondaryButton("Limpiar / Restablecer");
-        btnTestMp = UIKit.secondaryButton("Probar Conexión MP");
     }
 
     private void buildLayout() {
@@ -83,7 +58,7 @@ public class IFrmConfiguracionERP extends JInternalFrame {
                 UIKit.screenHeader("Configuración", "Administración  >  Configuración ERP"),
                 BorderLayout.NORTH);
 
-        JPanel cuerpo = new JPanel(new GridLayout(1, 2, UIKit.SPACE_LG, 0));
+        JPanel cuerpo = new JPanel(new GridLayout(1, 1, UIKit.SPACE_LG, 0));
         cuerpo.setOpaque(false);
 
         // ── Sección 1: Datos de la Empresa ──
@@ -137,51 +112,7 @@ public class IFrmConfiguracionERP extends JInternalFrame {
 
         cuerpo.add(pnlEmpresa);
 
-        // ── Sección 2: Configuración Mercado Pago API ──
-        JPanel pnlApi = UIKit.card();
-        pnlApi.setLayout(new GridBagLayout());
-        
-        GridBagConstraints gbcA = new GridBagConstraints();
-        gbcA.fill = GridBagConstraints.HORIZONTAL;
-        gbcA.weightx = 1.0;
 
-        gbcA.gridx = 0; gbcA.gridy = 0;
-        gbcA.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlApi.add(UIKit.sectionHeader("Integración Mercado Pago", null), gbcA);
-
-        gbcA.gridy = 1;
-        gbcA.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlApi.add(UIKit.fieldLabel("Access Token (Production/Sandbox)"), gbcA);
-        
-        gbcA.gridy = 2;
-        gbcA.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        JPanel pnlToken = new JPanel(new BorderLayout());
-        pnlToken.setOpaque(false);
-        pnlToken.add(txtMpToken, BorderLayout.CENTER);
-        pnlToken.add(btnOjoToken, BorderLayout.EAST);
-        pnlApi.add(pnlToken, gbcA);
-
-        gbcA.gridy = 3;
-        gbcA.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlApi.add(UIKit.fieldLabel("Public Key"), gbcA);
-        gbcA.gridy = 4;
-        gbcA.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlApi.add(txtMpPublicKey, gbcA);
-
-        gbcA.gridy = 5;
-        gbcA.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlApi.add(UIKit.fieldLabel("Client ID / POS ID"), gbcA);
-        gbcA.gridy = 6;
-        gbcA.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
-        pnlApi.add(txtMpClientId, gbcA);
-
-        gbcA.gridy = 7;
-        gbcA.fill = GridBagConstraints.NONE;
-        gbcA.anchor = GridBagConstraints.WEST;
-        gbcA.weighty = 1.0;
-        pnlApi.add(btnTestMp, gbcA);
-
-        cuerpo.add(pnlApi);
 
         // Panel inferior: Botones generales
         JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.RIGHT, UIKit.SPACE_SM, 0));
@@ -209,24 +140,6 @@ public class IFrmConfiguracionERP extends JInternalFrame {
             txtDireccion.setText("");
             txtTelefonoEmpresa.setText("");
             txtCorreoEmpresa.setText("");
-            txtMpToken.setText("");
-            txtMpPublicKey.setText("");
-            txtMpClientId.setText("");
-        });
-
-        btnTestMp.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Prueba de conexión con Mercado Pago: OK\nToken verificado.");
-        });
-
-        btnOjoToken.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                txtMpToken.setEchoChar((char) 0);
-            }
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                txtMpToken.setEchoChar('•');
-            }
         });
     }
 }

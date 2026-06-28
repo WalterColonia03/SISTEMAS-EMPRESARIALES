@@ -18,19 +18,22 @@ public class Venta {
 
     private int            idVenta;
     private String         cliente;
-    private BigDecimal     total;      // CORREGIDO: era double
+    private BigDecimal     total;
     private String         fecha;
+    private String         metodoPago;
     private List<DetalleVenta> detalles;
 
     public Venta() {
         this.detalles = new ArrayList<>();
+        this.metodoPago = "Efectivo";
     }
 
-    public Venta(int idVenta, String cliente, BigDecimal total, String fecha) {
+    public Venta(int idVenta, String cliente, BigDecimal total, String fecha, String metodoPago) {
         this.idVenta  = idVenta;
         this.cliente  = cliente;
         this.total    = total;
         this.fecha    = fecha;
+        this.metodoPago = metodoPago;
         this.detalles = new ArrayList<>();
     }
 
@@ -45,6 +48,9 @@ public class Venta {
 
     public String       getFecha()    { return fecha; }
     public void         setFecha(String fecha) { this.fecha = fecha; }
+
+    public String       getMetodoPago() { return metodoPago; }
+    public void         setMetodoPago(String metodoPago) { this.metodoPago = metodoPago; }
 
     public List<DetalleVenta> getDetalles() { return detalles; }
     public void setDetalles(List<DetalleVenta> detalles) { this.detalles = detalles; }

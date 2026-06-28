@@ -26,7 +26,7 @@ public class VentaDAO {
 
     public List<Venta> listarTodos() {
         List<Venta> lista = new ArrayList<>();
-        String sql = "SELECT idVenta, cliente, total, fecha FROM tb_venta";
+        String sql = "SELECT idVenta, cliente, total, fecha, metodoPago FROM tb_venta";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -35,8 +35,9 @@ public class VentaDAO {
                 Venta v = new Venta(
                         rs.getInt("idVenta"),
                         rs.getString("cliente"),
-                        rs.getBigDecimal("total"),   // CORREGIDO: era getDouble
-                        rs.getString("fecha")
+                        rs.getBigDecimal("total"),
+                        rs.getString("fecha"),
+                        rs.getString("metodoPago")
                 );
                 lista.add(v);
             }
@@ -47,14 +48,15 @@ public class VentaDAO {
     }
 
     public boolean guardar(Venta v) {
-        String sql = "INSERT INTO tb_venta (idVenta, cliente, total, fecha) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO tb_venta (idVenta, cliente, total, fecha, metodoPago) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, v.getIdVenta());
             ps.setString(2, v.getCliente());
-            ps.setBigDecimal(3, v.getTotal());  // CORREGIDO: era setDouble
+            ps.setBigDecimal(3, v.getTotal());
             ps.setString(4, v.getFecha());
+            ps.setString(5, v.getMetodoPago());
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
@@ -64,14 +66,15 @@ public class VentaDAO {
     }
 
     public boolean actualizar(Venta v) {
-        String sql = "UPDATE tb_venta SET cliente=?, total=?, fecha=? WHERE idVenta=?";
+        String sql = "UPDATE tb_venta SET cliente=?, total=?, fecha=?, metodoPago=? WHERE idVenta=?";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, v.getCliente());
-            ps.setBigDecimal(2, v.getTotal());  // CORREGIDO: era setDouble
+            ps.setBigDecimal(2, v.getTotal());
             ps.setString(3, v.getFecha());
-            ps.setInt(4, v.getIdVenta());
+            ps.setString(4, v.getMetodoPago());
+            ps.setInt(5, v.getIdVenta());
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
@@ -116,7 +119,7 @@ public class VentaDAO {
      * Creado: 2026-06-25 | Revisado: 2026-06-26
      */
     public boolean registrarVentaCompleta(Venta v) {
-        String sqlVenta   = "INSERT INTO tb_venta (cliente, total, fecha) VALUES (?, ?, ?)";
+        String sqlVenta   = "INSERT INTO tb_venta (cliente, total, fecha, metodoPago) VALUES (?, ?, ?, ?)";
         String sqlDetalle = "INSERT INTO tb_detalle_venta (idVenta, idProducto, cantidad, precioUnitario) " +
                             "VALUES (?, ?, ?, ?)";
         String sqlStock   = "UPDATE tb_producto SET cantidad = cantidad - ? WHERE idProducto = ?";
@@ -132,8 +135,9 @@ public class VentaDAO {
             int idVentaGenerado;
             try (PreparedStatement psVenta = conn.prepareStatement(sqlVenta, Statement.RETURN_GENERATED_KEYS)) {
                 psVenta.setString(1, v.getCliente());
-                psVenta.setBigDecimal(2, v.getTotal());  // CORREGIDO: era setDouble
+                psVenta.setBigDecimal(2, v.getTotal());
                 psVenta.setString(3, v.getFecha());
+                psVenta.setString(4, v.getMetodoPago() == null ? "Efectivo" : v.getMetodoPago());
                 psVenta.executeUpdate();
 
                 try (ResultSet rs = psVenta.getGeneratedKeys()) {
@@ -244,13 +248,13 @@ public class VentaDAO {
     // FR-002/Dashboard: ultimas N ventas para tabla "Ventas Recientes"
     public List<Object[]> ultimasVentas(int n) {
         List<Object[]> lista = new ArrayList<>();
-        String sql = "SELECT idVenta, cliente, total, fecha FROM tb_venta ORDER BY idVenta DESC LIMIT ?";
+        String sql = "SELECT idVenta, cliente, total, fecha, metodoPago FROM tb_venta ORDER BY idVenta DESC LIMIT ?";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, n);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    lista.add(new Object[]{ rs.getInt("idVenta"), rs.getString("cliente"), rs.getBigDecimal("total"), rs.getString("fecha") });
+                    lista.add(new Object[]{ rs.getInt("idVenta"), rs.getString("cliente"), rs.getBigDecimal("total"), rs.getString("fecha"), rs.getString("metodoPago") });
                 }
             }
         } catch (SQLException ex) {
@@ -262,13 +266,13 @@ public class VentaDAO {
     // FR-016: historial de ventas de un cliente por su DNI
     public List<Object[]> ventasPorCliente(String dniCliente) {
         List<Object[]> lista = new ArrayList<>();
-        String sql = "SELECT idVenta, cliente, total, fecha FROM tb_venta WHERE cliente = ? ORDER BY idVenta DESC";
+        String sql = "SELECT idVenta, cliente, total, fecha, metodoPago FROM tb_venta WHERE cliente = ? ORDER BY idVenta DESC";
         try (Connection conn = ConexionDB.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, dniCliente);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    lista.add(new Object[]{ rs.getInt("idVenta"), rs.getString("cliente"), rs.getBigDecimal("total"), rs.getString("fecha") });
+                    lista.add(new Object[]{ rs.getInt("idVenta"), rs.getString("cliente"), rs.getBigDecimal("total"), rs.getString("fecha"), rs.getString("metodoPago") });
                 }
             }
         } catch (SQLException ex) {

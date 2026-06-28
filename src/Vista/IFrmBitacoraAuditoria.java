@@ -173,7 +173,7 @@ public class IFrmBitacoraAuditoria extends JInternalFrame {
             Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_SEGURIDAD, "EXPORTAR_BITACORA_PDF", Utils.BitacoraService.OK, nombreArchivo);
             
         } catch (Exception ex) {
-            Utils.LoggerGlobal.logError(this.getClass().getName(), "generarPDF", "Error exportando bitácora", ex);
+            Utils.LoggerGlobal.error("Error exportando bitácora", ex);
             JOptionPane.showMessageDialog(this, "Error al generar el PDF: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
