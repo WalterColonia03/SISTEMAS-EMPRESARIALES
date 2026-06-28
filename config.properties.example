@@ -1,0 +1,23 @@
+# config.properties.example
+# Este archivo es un ejemplo. Copie este archivo como "config.properties" y rellene sus credenciales.
+# El archivo config.properties original está ignorado en .gitignore por seguridad.
+
+# ----------------------------
+# 1. Base de Datos (MySQL)
+# ----------------------------
+# NOTA DE SEGURIDAD: Evite usar el usuario 'root' en producción.
+# Se recomienda crear un usuario limitado:
+# CREATE USER 'laredo_app'@'localhost' IDENTIFIED BY 'tu_password';
+# GRANT SELECT, INSERT, UPDATE, DELETE ON bd_erp.* TO 'laredo_app'@'localhost';
+
+db.url=jdbc:mysql://localhost:3306/bd_erp?useSSL=false&serverTimezone=America/Lima
+db.user=laredo_app
+db.password=tu_password_segura
+
+# ----------------------------
+# 2. Servicios Externos (APIs)
+# ----------------------------
+# Token para consultar DNI y RUC desde apisperu.com
+# Reemplace "TU_TOKEN_AQUI" por un JWT válido obtenido de su cuenta.
+
+api.token=TU_TOKEN_AQUI

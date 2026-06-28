@@ -148,6 +148,23 @@ public class ProductoDAO {
         return lista;
     }
 
+    // Busca producto por ID (para evitar cargar toda la lista)
+    public Producto buscarPorId(int id) {
+        String sql = "SELECT idProducto,nombre,cantidad,precio,descripcion,idCategoria,estado FROM tb_producto WHERE idProducto = ?";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Producto(rs.getInt("idProducto"), rs.getString("nombre"), rs.getInt("cantidad"), rs.getBigDecimal("precio"), rs.getString("descripcion"), rs.getInt("idCategoria"), rs.getInt("estado"));
+                }
+            }
+        } catch (SQLException ex) {
+            LoggerGlobal.error("ProductoDAO.buscarPorId() fallo id=" + id, ex);
+        }
+        return null;
+    }
+
     // Busca producto por nombre exacto (para POS y validaciones)
     public Producto buscarPorNombre(String nombre) {
         String sql = "SELECT idProducto,nombre,cantidad,precio,descripcion,idCategoria,estado FROM tb_producto WHERE nombre = ?";

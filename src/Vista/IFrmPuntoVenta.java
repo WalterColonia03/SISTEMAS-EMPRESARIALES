@@ -48,7 +48,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
     private JButton btnRegistrar;
     private JButton btnCancelar;
 
-    private double descuentoPuntos = 0.0;
+    private BigDecimal descuentoPuntos = BigDecimal.ZERO;
     private int puntosActualesCliente = 0;
     private int puntosACanjear = 0;
 
@@ -60,6 +60,9 @@ public class IFrmPuntoVenta extends JInternalFrame {
         cargarProductos(null);
         setSize(1150, 750);
         putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
+        
+        // Soporte para lector de código de barras (auto-focus)
+        SwingUtilities.invokeLater(() -> txtCodProducto.requestFocusInWindow());
     }
 
     private void initComponents() {
@@ -359,6 +362,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
         });
         recalcularTotal();
         cargarProductos(txtBuscarProd.getText());
+        SwingUtilities.invokeLater(() -> txtCodProducto.requestFocusInWindow());
     }
 
     private void attachEvents() {
@@ -419,10 +423,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
             try {
                 int id = Integer.parseInt(cod);
                 ProductoDAO dao = new ProductoDAO();
-                Producto prod = null;
-                for(Producto p : dao.listarTodos()) {
-                    if(p.getIdProducto() == id) { prod = p; break; }
-                }
+                Producto prod = dao.buscarPorId(id);
                 if(prod != null) {
                     agregarProductoAlCarrito(prod);
                     txtCodProducto.setText("");
@@ -451,7 +452,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
         // Buscar cliente
         btnBuscarCliente.addActionListener(e -> {
             String dni = txtDni.getText().trim();
-            descuentoPuntos = 0.0;
+            descuentoPuntos = BigDecimal.ZERO;
             puntosACanjear = 0;
             recalcularTotal();
             if (dni.isEmpty()) {
@@ -515,9 +516,9 @@ public class IFrmPuntoVenta extends JInternalFrame {
         btnCanjearPuntos.addActionListener(e -> {
             if (puntosActualesCliente >= 100) {
                 int puntosUsables = (puntosActualesCliente / 100) * 100;
-                descuentoPuntos = puntosUsables / 100.0;
+                descuentoPuntos = new BigDecimal(puntosUsables).divide(BigDecimal.valueOf(100));
                 puntosACanjear = puntosUsables;
-                JOptionPane.showMessageDialog(this, "Descuento de S/ " + String.format("%.2f", descuentoPuntos) + " aplicado.");
+                JOptionPane.showMessageDialog(this, "Descuento de S/ " + descuentoPuntos.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + " aplicado.");
                 recalcularTotal();
                 btnCanjearPuntos.setEnabled(false);
             }
@@ -642,7 +643,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
             txtBuscarProd.setText("");
             lblNombreCliente.setText("Consumidor Final");
             lblPuntos.setText("Pts: 0");
-            descuentoPuntos = 0.0;
+            descuentoPuntos = BigDecimal.ZERO;
             puntosACanjear = 0;
             puntosActualesCliente = 0;
             btnCanjearPuntos.setEnabled(false);
@@ -661,8 +662,7 @@ public class IFrmPuntoVenta extends JInternalFrame {
         
         lblSubtotal.setText("S/ " + total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
 
-        BigDecimal descuento = new BigDecimal(descuentoPuntos);
-        total = total.subtract(descuento);
+        total = total.subtract(descuentoPuntos);
         if (total.compareTo(BigDecimal.ZERO) < 0) total = BigDecimal.ZERO;
         
         lblTotal.setText("S/ " + total.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString());
