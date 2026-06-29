@@ -106,16 +106,20 @@ public class FrmDashboard extends JFrame {
 
         JPanel pnlSidebar = new JPanel();
         pnlSidebar.setLayout(new BoxLayout(pnlSidebar, BoxLayout.Y_AXIS));
-        pnlSidebar.setBackground(UIKit.PRIMARY);
-        pnlSidebar.setPreferredSize(new Dimension(260, 0));
-        pnlSidebar.setBorder(new EmptyBorder(15, 0, 15, 0));
+        pnlSidebar.setBackground(UIKit.SIDEBAR_BG);
+        pnlSidebar.setPreferredSize(new Dimension(240, 0));
+        pnlSidebar.setBorder(new EmptyBorder(0, 0, 0, 0));
 
-        JLabel lblLogo = new JLabel("Minimarket LAREDO", SwingConstants.CENTER);
-        lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        // Logo / marca del sistema
+        JPanel pnlLogo = new JPanel(new BorderLayout());
+        pnlLogo.setBackground(UIKit.SIDEBAR_BG);
+        pnlLogo.setBorder(new EmptyBorder(20, 16, 16, 16));
+        JLabel lblLogo = new JLabel("🛒  ERP LAREDO");
+        lblLogo.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblLogo.setForeground(Color.WHITE);
-        lblLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
-        lblLogo.setBorder(new EmptyBorder(10, 0, 20, 0));
-        pnlSidebar.add(lblLogo);
+        pnlLogo.add(lblLogo, BorderLayout.WEST);
+        pnlSidebar.add(pnlLogo);
+        pnlSidebar.add(UIKit.separator());
 
         JPanel pnlMenuContainer = new JPanel();
         pnlMenuContainer.setLayout(new BoxLayout(pnlMenuContainer, BoxLayout.Y_AXIS));
@@ -159,29 +163,21 @@ public class FrmDashboard extends JFrame {
         JPanel pnlCenter = new JPanel(new BorderLayout());
         pnlTopBar = new JPanel(new BorderLayout());
         pnlTopBar.setBackground(Color.WHITE);
-        pnlTopBar.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, UIKit.BORDER), new EmptyBorder(12, 24, 12, 24)));
+        pnlTopBar.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, UIKit.BORDER),
+            new EmptyBorder(10, 24, 10, 24)));
         
-        lblBreadcrumb = new JLabel("Inicio > Panel de Control ERP");
-        lblBreadcrumb.setFont(UIKit.BODY_BOLD);
-        lblBreadcrumb.setForeground(UIKit.TEXT_PRIMARY);
+        lblBreadcrumb = new JLabel("Inicio / Dashboard");
+        lblBreadcrumb.setFont(UIKit.BODY);
+        lblBreadcrumb.setForeground(UIKit.TEXT_SECONDARY);
         pnlTopBar.add(lblBreadcrumb, BorderLayout.WEST);
         
-        JPanel pnlUserInfo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
-        pnlUserInfo.setOpaque(false);
-        
-        JTextField txtSearchGlobal = UIKit.textField();
-        txtSearchGlobal.setPreferredSize(new Dimension(200, 32));
-        txtSearchGlobal.putClientProperty("JTextField.placeholderText", "Buscar módulo...");
-        pnlUserInfo.add(txtSearchGlobal);
-        
+        // Topbar derecho: badge usuario + rol (patrón referencia web)
         String nombreUsuario = Sesion.getUsuario() != null ? Sesion.getUsuario() : "Admin";
         String rolUsuario = Sesion.getRol() != null ? Sesion.getRol() : "Administrador";
-        JLabel lblUser = new JLabel(nombreUsuario + " (" + rolUsuario + ")");
-        lblUser.setFont(UIKit.BODY);
-        lblUser.setForeground(UIKit.TEXT_SECONDARY);
-        pnlUserInfo.add(lblUser);
-        
+        JPanel pnlUserInfo = UIKit.topbarUserBadge(nombreUsuario, rolUsuario);
         pnlTopBar.add(pnlUserInfo, BorderLayout.EAST);
+        
         pnlCenter.add(pnlTopBar, BorderLayout.NORTH);
         pnlCenter.add(desktopPane, BorderLayout.CENTER);
         add(pnlCenter, BorderLayout.CENTER);
@@ -189,19 +185,21 @@ public class FrmDashboard extends JFrame {
         initBgDashboard();
     }
 
+    /** Grupo de navegación en el sidebar con etiqueta de sección y botones. */
     private JPanel navGroup(String titulo, JButton... botones) {
         JPanel grupo = new JPanel();
-        grupo.setOpaque(false);
+        grupo.setBackground(UIKit.SIDEBAR_BG);
         grupo.setLayout(new BoxLayout(grupo, BoxLayout.Y_AXIS));
         grupo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        // Etiqueta de sección en gris claro semitransparente
         JLabel lblGrupo = new JLabel(titulo.toUpperCase());
         lblGrupo.setFont(UIKit.CAPTION);
-        lblGrupo.setForeground(new Color(255, 255, 255, 130)); 
-        lblGrupo.setBorder(new EmptyBorder(UIKit.SPACE_MD, UIKit.SPACE_MD, UIKit.SPACE_XS, UIKit.SPACE_MD));
+        lblGrupo.setForeground(UIKit.SIDEBAR_SECTION);
+        lblGrupo.setBorder(new EmptyBorder(14, 16, 4, 16));
         grupo.add(lblGrupo);
         for (JButton b : botones) {
             grupo.add(b);
-            grupo.add(Box.createVerticalStrut(2));
+            grupo.add(Box.createVerticalStrut(1));
         }
         return grupo;
     }
@@ -215,19 +213,20 @@ public class FrmDashboard extends JFrame {
         pnlContent.setBackground(UIKit.BG_APP);
         pnlContent.setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        JPanel pnlCards = new JPanel(new GridLayout(1, 3, 20, 0));
+        JPanel pnlCards = new JPanel(new GridLayout(1, 3, 16, 0));
         pnlCards.setOpaque(false);
-        pnlCards.setPreferredSize(new Dimension(0, 100));
+        pnlCards.setPreferredSize(new Dimension(0, 110));
 
-        JPanel cardHoy = UIKit.kpiCard("VENTAS HOY", "S/ 0.00", "0 Transacciones", UIKit.ACCENT);
+        // KPI cards con ícono — patrón referencia web (FR-001)
+        JPanel cardHoy = UIKit.kpiCard("Total Ventas del Mes", "0", "0 Transacciones", UIKit.PRIMARY, "🛒");
         lblVentasHoy = (JLabel) cardHoy.getClientProperty("val");
         lblSubVentasHoy = (JLabel) cardHoy.getClientProperty("sub");
         
-        JPanel cardSemana = UIKit.kpiCard("VENTAS SEMANA", "S/ 0.00", "Semana en curso", UIKit.SUCCESS);
+        JPanel cardSemana = UIKit.kpiCard("Ingresos del Mes", "S/ 0.00", "Semana en curso", UIKit.SUCCESS, "$");
         lblVentasSemana = (JLabel) cardSemana.getClientProperty("val");
         lblSubVentasSemana = (JLabel) cardSemana.getClientProperty("sub");
         
-        JPanel cardAlerta = UIKit.kpiCard("ALERTAS STOCK", "0 Productos", "Requieren reposicion", UIKit.WARNING);
+        JPanel cardAlerta = UIKit.kpiCard("Sin Stock", "0", "Productos agotados", UIKit.DANGER, "⚠");
         lblAlertasStock = (JLabel) cardAlerta.getClientProperty("val");
         lblSubAlertasStock = (JLabel) cardAlerta.getClientProperty("sub");
 
@@ -318,34 +317,48 @@ public class FrmDashboard extends JFrame {
         }
     }
 
+    /**
+     * Construye botón de menú lateral con estilo dark-navy.
+     * Implementa el patrón de sidebar de la referencia web.
+     */
     private JButton buildMenuButton(String text) {
-        JButton btn = new JButton("  " + text);
+        JButton btn = new JButton(text);
         btn.setFont(UIKit.BODY);
-        btn.setForeground(Color.WHITE);
-        btn.setBackground(UIKit.PRIMARY);
+        btn.setForeground(UIKit.SIDEBAR_TEXT);
+        btn.setBackground(UIKit.SIDEBAR_BG);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(true);
         btn.setOpaque(true);
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setMaximumSize(new Dimension(Short.MAX_VALUE, 44));
-        btn.setPreferredSize(new Dimension(260, 44));
+        btn.setMaximumSize(new Dimension(Short.MAX_VALUE, 40));
+        btn.setPreferredSize(new Dimension(240, 40));
         btn.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
 
         btn.addActionListener(e -> {
+            // Restablecer botón anteriormente seleccionado
             if (btnSeleccionado != null) {
-                btnSeleccionado.setBackground(UIKit.PRIMARY);
+                btnSeleccionado.setBackground(UIKit.SIDEBAR_BG);
+                btnSeleccionado.setForeground(UIKit.SIDEBAR_TEXT);
                 btnSeleccionado.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
             }
+            // Marcar nuevo botón activo con borde izquierdo accent
             btnSeleccionado = btn;
-            btnSeleccionado.setBackground(UIKit.PRIMARY_DARK);
-            btnSeleccionado.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, UIKit.ACCENT), BorderFactory.createEmptyBorder(0, 13, 0, 16)));
+            btnSeleccionado.setBackground(UIKit.SIDEBAR_ACTIVE);
+            btnSeleccionado.setForeground(Color.WHITE);
+            btnSeleccionado.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 3, 0, 0, Color.WHITE),
+                BorderFactory.createEmptyBorder(0, 13, 0, 16)));
         });
 
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent e) { if (btn != btnSeleccionado) btn.setBackground(UIKit.PRIMARY_DARK); }
-            public void mouseExited(java.awt.event.MouseEvent e)  { if (btn != btnSeleccionado) btn.setBackground(UIKit.PRIMARY); }
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                if (btn != btnSeleccionado) btn.setBackground(UIKit.SIDEBAR_HOVER);
+            }
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                if (btn != btnSeleccionado) btn.setBackground(UIKit.SIDEBAR_BG);
+            }
         });
         return btn;
     }

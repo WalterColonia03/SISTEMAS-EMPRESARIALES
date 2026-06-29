@@ -1,247 +1,229 @@
 package Vista;
 
 import Clases.Categoria;
+import Clases.Sesion;
 import Modelo.CategoriaDAO;
 import Vista.Estilos.UIKit;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
+/**
+ * Gestión de Categorías — ERP Minimarket LAREDO.
+ * Capa: Vista — Implementa: FR-003, RNF-06 (bitácora).
+ * Rediseñado UIKit v3.0: header con botón "+ Nueva Categoría", tabla con badges, acciones por fila.
+ */
 public class IFrmGestionCategorias extends JInternalFrame {
 
-    private JTable tblCategorÃ­as;
-    private DefaultTableModel modelCategorÃ­as;
+    private JTable tblCategorias;
+    private DefaultTableModel modelCategorias;
     private JTextField txtBuscar;
 
     private JTextField txtId;
-    private JTextField txtDescripcion; // Este es el "Nombre" de la categoría
+    private JTextField txtDescripcion;
     private JComboBox<String> cbEstado;
 
-    private JButton btnBuscar;
+    private JButton btnNuevo;
     private JButton btnGuardar;
     private JButton btnEliminar;
     private JButton btnLimpiar;
+
+    private JLabel lblErrorNombre;
 
     public IFrmGestionCategorias() {
         super("Gestión de Categorías", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
-        cargarTabla();
-        setSize(960, 600);
+        cargarTabla("");
+        setSize(1000, 600);
         putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
     }
 
     private void initComponents() {
-        txtBuscar = UIKit.textField();
-        txtBuscar.setPreferredSize(new Dimension(200, 36));
-        
-        btnBuscar = UIKit.secondaryButton("Buscar");
+        txtBuscar = UIKit.searchField("Buscar categoría...");
+        txtBuscar.setPreferredSize(new Dimension(260, 38));
 
-        String[] columns = {"ID", "Nombre de Categoría", "Estado"};
-        modelCategorÃ­as = new DefaultTableModel(columns, 0) {
-            @Override public boolean isCellEditable(int row, int col) { return false; }
+        // Tabla — columnas como referencia web: ID | Nombre | Estado | Acciones
+        String[] cols = {"ID", "Nombre de Categoría", "Estado"};
+        modelCategorias = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        tblCategorÃ­as = UIKit.styledTable(modelCategorÃ­as);
+        tblCategorias = UIKit.styledTable(modelCategorias);
+        tblCategorias.getColumnModel().getColumn(0).setMaxWidth(60);
+        tblCategorias.getColumnModel().getColumn(2).setMaxWidth(120);
 
-        txtId = UIKit.readOnlyField();
-        txtDescripcion = UIKit.textField(); UIKit.addTextValidator(txtDescripcion, 100);
-        txtDescripcion.putClientProperty("JTextField.placeholderText", "Ej. Gaseosas, Lácteos...");
-        
+        // Badge de estado en columna 2
+        tblCategorias.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(
+                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+                JLabel badge = UIKit.statusBadge(v != null ? v.toString() : "");
+                badge.setBorder(new EmptyBorder(4, 0, 4, 0));
+                return badge;
+            }
+        });
+
+        txtId          = UIKit.readOnlyField();
+        txtDescripcion = UIKit.textField();
+        UIKit.addTextValidator(txtDescripcion, 100);
+        txtDescripcion.putClientProperty("JTextField.placeholderText", "Ej. Lácteos, Bebidas, Snacks...");
+
         cbEstado = new JComboBox<>(new String[]{"Activo", "Inactivo"});
-        cbEstado.setFont(UIKit.BODY);
+        cbEstado.setFont(UIKit.BODY); cbEstado.setPreferredSize(new Dimension(0, 38));
 
-        btnGuardar = UIKit.primaryButton("Guardar / Actualizar");
-        btnLimpiar = UIKit.secondaryButton("Limpiar / Nuevo");
-        btnEliminar = UIKit.dangerOutlineButton("Eliminar (Ocultar)");
+        lblErrorNombre = new JLabel(" "); lblErrorNombre.setFont(UIKit.CAPTION); lblErrorNombre.setForeground(UIKit.DANGER);
+
+        btnNuevo   = UIKit.newButton("Nueva Categoría");
+        btnGuardar = UIKit.primaryButton("💾 Guardar");
+        btnLimpiar = UIKit.secondaryButton("✕ Cancelar");
+        btnEliminar= UIKit.dangerOutlineButton("🗑 Inactivar");
     }
 
     private void buildLayout() {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().setBackground(UIKit.BG_APP);
-        ((JComponent) getContentPane()).setBorder(new EmptyBorder(
-                UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
+        ((JComponent)getContentPane()).setBorder(new EmptyBorder(UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
 
-        // ===== Encabezado =====
-        getContentPane().add(
-                UIKit.screenHeader("Gestión de Categorías", "Inventario  >  Categorías"),
-                BorderLayout.NORTH);
+        // Header con botón a la derecha
+        getContentPane().add(UIKit.screenHeader("Categorías", "Inicio / Categorías", btnNuevo), BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
         cuerpo.setOpaque(false);
 
-        // â”€â”€ Tarjeta Izquierda: Tabla â”€â”€
+        // ── Panel tabla ──
         JPanel pnlTabla = UIKit.card();
         pnlTabla.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
-
-        JPanel pnlBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_SM, 0));
-        pnlBusqueda.setOpaque(false);
-        pnlBusqueda.add(txtBuscar);
-        pnlBusqueda.add(btnBuscar);
-        
-        pnlTabla.add(UIKit.sectionHeader("Listado de Categorías", pnlBusqueda), BorderLayout.NORTH);
-        
-        JScrollPane scroll = new JScrollPane(tblCategorÃ­as);
+        // Barra de búsqueda
+        JPanel pnlTop = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        pnlTop.setOpaque(false); pnlTop.add(txtBuscar);
+        pnlTabla.add(pnlTop, BorderLayout.NORTH);
+        JScrollPane scroll = new JScrollPane(tblCategorias);
         scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
         pnlTabla.add(scroll, BorderLayout.CENTER);
-
         cuerpo.add(pnlTabla, BorderLayout.CENTER);
 
-        // â”€â”€ Tarjeta Derecha: Formulario â”€â”€
+        // ── Formulario lateral ──
         JPanel pnlForm = UIKit.card();
         pnlForm.setPreferredSize(new Dimension(320, 0));
         pnlForm.setLayout(new GridBagLayout());
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
 
-        gbc.gridx = 0; gbc.gridy = 0;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlForm.add(UIKit.sectionHeader("Detalle de Categoría", null), gbc);
+        GridBagConstraints g = new GridBagConstraints();
+        g.fill = GridBagConstraints.HORIZONTAL; g.weightx = 1; g.gridx = 0;
 
-        gbc.gridy = 1;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlForm.add(UIKit.fieldLabel("ID Categoría"), gbc);
-        gbc.gridy = 2;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlForm.add(txtId, gbc);
+        g.gridy=0; g.insets=new Insets(0,0,UIKit.SPACE_MD,0);
+        pnlForm.add(UIKit.sectionHeader("Detalle de Categoría", null), g);
 
-        gbc.gridy = 3;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlForm.add(UIKit.fieldLabel("Nombre de Categoría"), gbc);
-        gbc.gridy = 4;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_MD, 0);
-        pnlForm.add(txtDescripcion, gbc);
+        g.gridy=1; g.insets=new Insets(0,0,2,0); pnlForm.add(UIKit.fieldLabel("ID"), g);
+        g.gridy=2; g.insets=new Insets(0,0,UIKit.SPACE_MD,0); pnlForm.add(txtId, g);
 
-        gbc.gridy = 5;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_XS, 0);
-        pnlForm.add(UIKit.fieldLabel("Estado"), gbc);
-        gbc.gridy = 6;
-        gbc.insets = new Insets(0, 0, UIKit.SPACE_LG, 0);
-        pnlForm.add(cbEstado, gbc);
+        g.gridy=3; g.insets=new Insets(0,0,2,0); pnlForm.add(UIKit.fieldLabel("Nombre *"), g);
+        g.gridy=4; g.insets=new Insets(0,0,2,0); pnlForm.add(txtDescripcion, g);
+        g.gridy=5; g.insets=new Insets(0,0,UIKit.SPACE_MD,0); pnlForm.add(lblErrorNombre, g);
 
-        JPanel pnlBotones = new JPanel(new GridLayout(3, 1, 0, UIKit.SPACE_SM));
+        g.gridy=6; g.insets=new Insets(0,0,2,0); pnlForm.add(UIKit.fieldLabel("Estado"), g);
+        g.gridy=7; g.insets=new Insets(0,0,UIKit.SPACE_LG,0); pnlForm.add(cbEstado, g);
+
+        JPanel pnlBotones = new JPanel(new GridLayout(1,3, UIKit.SPACE_SM,0));
         pnlBotones.setOpaque(false);
-        pnlBotones.add(btnGuardar);
-        pnlBotones.add(btnLimpiar);
-        pnlBotones.add(btnEliminar);
-
-        gbc.gridy = 7;
-        gbc.weighty = 1.0; 
-        gbc.anchor = GridBagConstraints.NORTH;
-        gbc.insets = new Insets(0, 0, 0, 0);
-        pnlForm.add(pnlBotones, gbc);
+        pnlBotones.add(btnGuardar); pnlBotones.add(btnLimpiar); pnlBotones.add(btnEliminar);
+        g.gridy=8; g.weighty=1; g.anchor=GridBagConstraints.NORTH; g.insets=new Insets(0,0,0,0);
+        pnlForm.add(pnlBotones, g);
 
         cuerpo.add(pnlForm, BorderLayout.EAST);
-        
         getContentPane().add(cuerpo, BorderLayout.CENTER);
     }
-    
-    private void cargarTabla() {
+
+    private void cargarTabla(String filtro) {
+        modelCategorias.setRowCount(0);
         CategoriaDAO dao = new CategoriaDAO();
-        List<Categoria> lista = dao.listarTodos();
-        modelCategorÃ­as.setRowCount(0);
-        for (Categoria c : lista) {
-            modelCategorÃ­as.addRow(new Object[]{
-                c.getIdCategoria(),
-                c.getDescripcion(),
-                c.getEstado() == 1 ? "Activo" : "Inactivo"
-            });
+        for (Categoria c : dao.listarTodos()) {
+            if (filtro.isEmpty() || c.getDescripcion().toLowerCase().contains(filtro)) {
+                modelCategorias.addRow(new Object[]{
+                    c.getIdCategoria(),
+                    c.getDescripcion(),
+                    c.getEstado() == 1 ? "Activo" : "Inactivo"
+                });
+            }
         }
     }
 
     private void attachEvents() {
-        btnBuscar.addActionListener(e -> {
-            String term = txtBuscar.getText().trim().toLowerCase();
-            if (term.isEmpty()) {
-                cargarTabla();
-                return;
-            }
-            CategoriaDAO dao = new CategoriaDAO();
-            List<Categoria> lista = dao.listarTodos();
-            modelCategorÃ­as.setRowCount(0);
-            for (Categoria c : lista) {
-                if (c.getDescripcion().toLowerCase().contains(term)) {
-                    modelCategorÃ­as.addRow(new Object[]{
-                        c.getIdCategoria(),
-                        c.getDescripcion(),
-                        c.getEstado() == 1 ? "Activo" : "Inactivo"
-                    });
-                }
+        // Búsqueda live
+        txtBuscar.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override public void keyReleased(java.awt.event.KeyEvent e) {
+                cargarTabla(txtBuscar.getText().trim().toLowerCase());
             }
         });
 
+        // Selección de fila → formulario
+        tblCategorias.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && tblCategorias.getSelectedRow() != -1) {
+                int row = tblCategorias.getSelectedRow();
+                txtId.setText(modelCategorias.getValueAt(row, 0).toString());
+                txtDescripcion.setText(modelCategorias.getValueAt(row, 1).toString());
+                cbEstado.setSelectedItem(modelCategorias.getValueAt(row, 2).toString());
+            }
+        });
+
+        btnNuevo.addActionListener(e -> limpiar());
+
+        // Guardar / Actualizar
         btnGuardar.addActionListener(e -> {
             String nombre = txtDescripcion.getText().trim();
-            if (nombre.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "El nombre de la categoría es obligatorio.");
-                return;
-            }
-            
+            if (nombre.length() < 2) { lblErrorNombre.setText("Mínimo 2 caracteres"); return; }
+            lblErrorNombre.setText(" ");
             int estado = cbEstado.getSelectedIndex() == 0 ? 1 : 0;
-            Categoria c = new Categoria(0, nombre, estado);
-            
             CategoriaDAO dao = new CategoriaDAO();
-            
             if (txtId.getText().isEmpty()) {
-                c.setIdCategoria(dao.generarId());
-                if (dao.guardar(c)) {
-                    JOptionPane.showMessageDialog(this, "Categoría guardada con éxito.");
-                } else {
-                    JOptionPane.showMessageDialog(this, "Error al guardar.");
-                }
+                Categoria c = new Categoria(dao.generarId(), nombre, estado);
+                boolean ok = dao.guardar(c);
+                if (ok) {
+                    Utils.BitacoraService.registrar(Sesion.getUsuario(),
+                        Utils.BitacoraService.MOD_INVENTARIO, "CREAR_CATEGORIA",
+                        Utils.BitacoraService.OK, "Categoría: " + nombre);
+                    JOptionPane.showMessageDialog(this, "✅ Categoría creada.");
+                } else JOptionPane.showMessageDialog(this, "❌ Error al crear.", "Error", JOptionPane.ERROR_MESSAGE);
             } else {
-                c.setIdCategoria(Integer.parseInt(txtId.getText()));
-                if (dao.actualizar(c)) {
-                    JOptionPane.showMessageDialog(this, "Categoría actualizada con éxito.");
-                } else {
-                    JOptionPane.showMessageDialog(this, "Error al actualizar.");
-                }
+                Categoria c = new Categoria(Integer.parseInt(txtId.getText()), nombre, estado);
+                boolean ok = dao.actualizar(c);
+                if (ok) {
+                    Utils.BitacoraService.registrar(Sesion.getUsuario(),
+                        Utils.BitacoraService.MOD_INVENTARIO, "EDITAR_CATEGORIA",
+                        Utils.BitacoraService.OK, "Categoría: " + nombre);
+                    JOptionPane.showMessageDialog(this, "✅ Categoría actualizada.");
+                } else JOptionPane.showMessageDialog(this, "❌ Error al actualizar.", "Error", JOptionPane.ERROR_MESSAGE);
             }
-            btnLimpiar.doClick();
-            cargarTabla();
+            limpiar(); cargarTabla("");
         });
 
         btnEliminar.addActionListener(e -> {
-            if (txtId.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Seleccione una categoría para eliminar/ocultar.");
-                return;
-            }
-            int opt = JOptionPane.showConfirmDialog(this, 
-                "Â¿Está seguro de ocultar/inactivar esta categoría?\n\nNota: Los productos y el historial de ventas vinculados a esta categoría NO se eliminarán por motivos de auditoría.", 
-                "Confirmar Acción", JOptionPane.YES_NO_OPTION);
-                
+            if (txtId.getText().isEmpty()) { JOptionPane.showMessageDialog(this, "Seleccione una categoría."); return; }
+            int opt = JOptionPane.showConfirmDialog(this,
+                "¿Inactivar la categoría '" + txtDescripcion.getText() + "'?\nLos productos asociados se conservan.",
+                "Confirmar", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (opt == JOptionPane.YES_OPTION) {
                 CategoriaDAO dao = new CategoriaDAO();
                 Categoria c = new Categoria(Integer.parseInt(txtId.getText()), txtDescripcion.getText(), 0);
                 if (dao.actualizar(c)) {
-                    JOptionPane.showMessageDialog(this, "Categoría ocultada/inactivada exitosamente.");
-                    btnLimpiar.doClick();
-                    cargarTabla();
-                } else {
-                    JOptionPane.showMessageDialog(this, "Error al inactivar la categoría.");
-                }
+                    Utils.BitacoraService.registrar(Sesion.getUsuario(),
+                        Utils.BitacoraService.MOD_INVENTARIO, "INACTIVAR_CATEGORIA",
+                        Utils.BitacoraService.OK, "ID: " + c.getIdCategoria());
+                    JOptionPane.showMessageDialog(this, "✅ Categoría inactivada.");
+                    limpiar(); cargarTabla("");
+                } else JOptionPane.showMessageDialog(this, "❌ Error al inactivar.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        btnLimpiar.addActionListener(e -> {
-            txtId.setText("");
-            txtDescripcion.setText("");
-            cbEstado.setSelectedIndex(0);
-        });
+        btnLimpiar.addActionListener(e -> limpiar());
+    }
 
-        tblCategorÃ­as.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tblCategorÃ­as.getSelectedRow() != -1) {
-                int row = tblCategorÃ­as.getSelectedRow();
-                txtId.setText(modelCategorÃ­as.getValueAt(row, 0).toString());
-                txtDescripcion.setText(modelCategorÃ­as.getValueAt(row, 1).toString());
-                String estado = modelCategorÃ­as.getValueAt(row, 2).toString();
-                cbEstado.setSelectedItem(estado);
-            }
-        });
+    private void limpiar() {
+        txtId.setText(""); txtDescripcion.setText("");
+        cbEstado.setSelectedIndex(0); lblErrorNombre.setText(" ");
+        tblCategorias.clearSelection();
     }
 }

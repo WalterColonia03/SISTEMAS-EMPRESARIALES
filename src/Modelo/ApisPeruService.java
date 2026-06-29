@@ -22,10 +22,10 @@ import java.net.URL;
  */
 public class ApisPeruService {
 
-    // Las credenciales se leen desde config.properties, no del código fuente
-    private static final String TOKEN   = ConfigManager.get("api.token");
-    private static final String URL_DNI = ConfigManager.get("api.url.dni");
-    private static final String URL_RUC = ConfigManager.get("api.url.ruc");
+    // API Decolecta (https://api.decolecta.com/v1)
+    private static final String TOKEN   = "sk_16843.paavpbKWDiR8LVrQATYyD30OusNYlPqD";
+    private static final String URL_DNI = "https://api.decolecta.com/v1/reniec/dni?numero=";
+    private static final String URL_RUC = "https://api.decolecta.com/v1/sunat/ruc?numero=";
 
     // Timeout de 5 segundos para evitar que la UI se congele (Circuit Breaker básico)
     private static final int TIMEOUT_MS = 5000;
@@ -36,12 +36,12 @@ public class ApisPeruService {
      */
     public static String[] consultarDNI(String dni) {
         try {
-            String json = ejecutarGet(URL_DNI + dni + "?token=" + TOKEN);
+            String json = ejecutarGet(URL_DNI + dni);
             if (json == null) return null;
 
-            String nombres    = extraerValorJSON(json, "nombres");
-            String apPaterno  = extraerValorJSON(json, "apellidoPaterno");
-            String apMaterno  = extraerValorJSON(json, "apellidoMaterno");
+            String nombres    = extraerValorJSON(json, "first_name");
+            String apPaterno  = extraerValorJSON(json, "first_last_name");
+            String apMaterno  = extraerValorJSON(json, "second_last_name");
 
             if (nombres != null) {
                 return new String[]{nombres, apPaterno != null ? apPaterno : "", apMaterno != null ? apMaterno : ""};
@@ -58,10 +58,10 @@ public class ApisPeruService {
      */
     public static String[] consultarRUC(String ruc) {
         try {
-            String json = ejecutarGet(URL_RUC + ruc + "?token=" + TOKEN);
+            String json = ejecutarGet(URL_RUC + ruc);
             if (json == null) return null;
 
-            String razonSocial = extraerValorJSON(json, "razonSocial");
+            String razonSocial = extraerValorJSON(json, "razon_social");
             String direccion   = extraerValorJSON(json, "direccion");
             String estado      = extraerValorJSON(json, "estado");
 
@@ -84,6 +84,7 @@ public class ApisPeruService {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + TOKEN);
             conn.setConnectTimeout(TIMEOUT_MS);
             conn.setReadTimeout(TIMEOUT_MS);
 

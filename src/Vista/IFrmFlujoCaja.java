@@ -230,8 +230,71 @@ public class IFrmFlujoCaja extends JInternalFrame {
         });
 
         btnExportar.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Reporte exportado exitosamente (Simulado).");
+            exportarPDF();
         });
+    }
+
+    private void exportarPDF() {
+        if (tblMovimientos.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this, "No hay movimientos para exportar.");
+            return;
+        }
+        try {
+            String fileName = "Flujo_Caja_" + System.currentTimeMillis() + ".pdf";
+            com.itextpdf.text.Document doc = new com.itextpdf.text.Document();
+            com.itextpdf.text.pdf.PdfWriter.getInstance(doc, new java.io.FileOutputStream(fileName));
+            doc.open();
+
+            com.itextpdf.text.Font titleFont  = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA_BOLD, 18);
+            com.itextpdf.text.Font headerFont = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA_BOLD, 11);
+
+            com.itextpdf.text.Paragraph titulo = new com.itextpdf.text.Paragraph("REPORTE DE FLUJO DE CAJA", titleFont);
+            titulo.setAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
+            doc.add(titulo);
+            doc.add(new com.itextpdf.text.Paragraph(" "));
+
+            com.itextpdf.text.pdf.PdfPTable tabla = new com.itextpdf.text.pdf.PdfPTable(4);
+            tabla.setWidthPercentage(100);
+            tabla.setWidths(new float[]{2f, 2f, 4f, 2f});
+
+            String[] headers = {"Fecha", "Tipo", "Concepto", "Monto"};
+            for (String h : headers) {
+                com.itextpdf.text.pdf.PdfPCell cell = new com.itextpdf.text.pdf.PdfPCell(new com.itextpdf.text.Phrase(h, headerFont));
+                cell.setBackgroundColor(new com.itextpdf.text.BaseColor(30, 160, 100)); // Verde excel
+                cell.setHorizontalAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
+                cell.setPadding(6);
+                com.itextpdf.text.Font whiteFont = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA_BOLD, 11);
+                whiteFont.setColor(com.itextpdf.text.BaseColor.WHITE);
+                cell.setPhrase(new com.itextpdf.text.Phrase(h, whiteFont));
+                tabla.addCell(cell);
+            }
+
+            for (int i = 0; i < tblMovimientos.getRowCount(); i++) {
+                tabla.addCell(String.valueOf(tblMovimientos.getValueAt(i, 0)));
+                tabla.addCell(String.valueOf(tblMovimientos.getValueAt(i, 1)));
+                tabla.addCell(String.valueOf(tblMovimientos.getValueAt(i, 2)));
+                tabla.addCell(String.valueOf(tblMovimientos.getValueAt(i, 3)));
+            }
+            doc.add(tabla);
+            doc.add(new com.itextpdf.text.Paragraph(" "));
+
+            com.itextpdf.text.Font boldFont = com.itextpdf.text.FontFactory.getFont(com.itextpdf.text.FontFactory.HELVETICA_BOLD, 12);
+            com.itextpdf.text.Paragraph resumen = new com.itextpdf.text.Paragraph(
+                "Ingresos: " + lblIngresos.getText() + " | Egresos: " + lblEgresos.getText() + " | Saldo Neto: " + lblSaldoNeto.getText(),
+                boldFont
+            );
+            resumen.setAlignment(com.itextpdf.text.Element.ALIGN_RIGHT);
+            doc.add(resumen);
+
+            doc.close();
+            JOptionPane.showMessageDialog(this, "Reporte exportado exitosamente.");
+            java.io.File f = new java.io.File(fileName);
+            if (f.exists()) java.awt.Desktop.getDesktop().open(f);
+
+        } catch (Exception ex) {
+            Utils.LoggerGlobal.error("IFrmFlujoCaja.exportarPDF() falló", ex);
+            JOptionPane.showMessageDialog(this, "Error al exportar: " + ex.getMessage());
+        }
     }
 
     private void registrarMovimiento(String tipo) {

@@ -299,6 +299,45 @@ public class ReporteProductosDAO {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // FR-052 — Monitor de Alertas: Próximos a Vencer
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public List<Object[]> productosProximosAVencer() {
+        List<Object[]> resultado = new ArrayList<>();
+        String sql = "SELECT nombre, lote, fechaVencimiento, cantidad FROM tb_producto WHERE estado = 1 AND fechaVencimiento IS NOT NULL AND fechaVencimiento != '-' AND fechaVencimiento != ''";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+             
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
+            java.util.Date hoy = new java.util.Date();
+            long unDiaMillis = 1000 * 60 * 60 * 24;
+            
+            while (rs.next()) {
+                String fVencStr = rs.getString("fechaVencimiento");
+                try {
+                    java.util.Date fVenc = sdf.parse(fVencStr);
+                    long diasRestantes = (fVenc.getTime() - hoy.getTime()) / unDiaMillis;
+                    
+                    if (diasRestantes <= 30) {
+                        String diasTexto = diasRestantes < 0 ? "VENCIDO" : diasRestantes + " días";
+                        resultado.add(new Object[] {
+                            rs.getString("nombre"),
+                            rs.getString("lote") != null ? rs.getString("lote") : "N/A",
+                            fVencStr,
+                            diasTexto,
+                            rs.getInt("cantidad")
+                        });
+                    }
+                } catch (Exception e) {}
+            }
+        } catch (SQLException ex) {
+            LoggerGlobal.error("ReporteProductosDAO.productosProximosAVencer() falló", ex);
+        }
+        return resultado;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // Helpers privados
     // ─────────────────────────────────────────────────────────────────────────
 

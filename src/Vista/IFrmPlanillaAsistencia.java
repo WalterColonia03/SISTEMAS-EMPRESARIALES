@@ -242,9 +242,11 @@ public class IFrmPlanillaAsistencia extends JInternalFrame {
             }
             txtDiasTrabajados.setText(String.valueOf(diasTrabajados));
             txtFaltas.setText(String.valueOf(Math.max(0, 30 - diasTrabajados)));
-            txtVacacionesAcumuladas.setText(String.valueOf(diasTrabajados > 0 ? 15 : 0));
             
             Modelo.EmpleadoDAO eDao = new Modelo.EmpleadoDAO();
+            int vacAcum = eDao.getVacacionesAcumuladas(idEmpleado);
+            txtVacacionesAcumuladas.setText(String.valueOf(vacAcum));
+            
             for (Clases.Empleado emp : eDao.listarTodos()) {
                 if (emp.getCodigo().equals(idEmpleado)) {
                     txtSalarioBase.setText(emp.getSueldoBase().toPlainString());
@@ -291,13 +293,18 @@ public class IFrmPlanillaAsistencia extends JInternalFrame {
                     return;
                 }
                 
-                // Simulación de registro exitoso
-                JOptionPane.showMessageDialog(this, "Vacaciones registradas exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                txtDiasVacaciones.setText("");
-                txtVacacionesAcumuladas.setText(String.valueOf(acumulados - dias));
-                
-                // FR-020-v2: Registro en bitácora
-                Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_RRHH, "REGISTRO_VACACIONES", Utils.BitacoraService.OK, "Días tomados: " + dias);
+                String codigoEmp = cbEmpleado.getSelectedItem().toString().split(" - ")[0];
+                Modelo.EmpleadoDAO dao = new Modelo.EmpleadoDAO();
+                if (dao.descontarVacaciones(codigoEmp, dias)) {
+                    JOptionPane.showMessageDialog(this, "Vacaciones registradas exitosamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    txtDiasVacaciones.setText("");
+                    txtVacacionesAcumuladas.setText(String.valueOf(acumulados - dias));
+                    
+                    // FR-020-v2: Registro en bitácora
+                    Utils.BitacoraService.registrar(Clases.Sesion.getUsuario(), Utils.BitacoraService.MOD_RRHH, "REGISTRO_VACACIONES", Utils.BitacoraService.OK, "Días tomados: " + dias + " por " + codigoEmp);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Error al registrar vacaciones en BD", "Error", JOptionPane.ERROR_MESSAGE);
+                }
                 
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Ingrese un número válido de días", "Error de Validación", JOptionPane.WARNING_MESSAGE);

@@ -85,7 +85,9 @@ public class IFrmPuntoVenta extends JInternalFrame {
         pnlGridProductos.setBackground(UIKit.BG_APP);
 
         txtDni = UIKit.textField();
-        btnBuscarCliente = UIKit.secondaryButton("ðŸ”");
+        txtDni.putClientProperty("JTextField.placeholderText", "No requerido (Consumidor Final)");
+        txtDni.setEnabled(false); // Por defecto Boleta Simple
+        btnBuscarCliente = UIKit.secondaryButton("🔍");
         lblNombreCliente = new JLabel("Consumidor Final");
         lblNombreCliente.setFont(UIKit.BODY_BOLD);
         lblNombreCliente.setForeground(UIKit.PRIMARY);
@@ -95,8 +97,29 @@ public class IFrmPuntoVenta extends JInternalFrame {
         btnCanjearPuntos = UIKit.secondaryButton("Canjear");
         btnCanjearPuntos.setEnabled(false);
 
-        cbComprobante = new JComboBox<>(new String[]{"Boleta Simple", "Factura"});
+        cbComprobante = new JComboBox<>(new String[]{"Boleta Simple", "Boleta Nominal", "Factura"});
         cbComprobante.setPreferredSize(new Dimension(0, 36));
+        
+        // Listener para UX de DNI/RUC
+        cbComprobante.addActionListener(e -> {
+            String tipo = cbComprobante.getSelectedItem().toString();
+            txtDni.setText("");
+            lblNombreCliente.setText("Consumidor Final");
+            lblPuntos.setText("Pts: 0");
+            btnCanjearPuntos.setEnabled(false);
+            if (tipo.equals("Boleta Simple")) {
+                txtDni.setEnabled(false);
+                txtDni.putClientProperty("JTextField.placeholderText", "No requerido");
+            } else if (tipo.equals("Boleta Nominal")) {
+                txtDni.setEnabled(true);
+                txtDni.putClientProperty("JTextField.placeholderText", "Ingrese DNI (8 dígitos)");
+                txtDni.requestFocus();
+            } else if (tipo.equals("Factura")) {
+                txtDni.setEnabled(true);
+                txtDni.putClientProperty("JTextField.placeholderText", "Ingrese RUC (11 dígitos)");
+                txtDni.requestFocus();
+            }
+        });
 
         cbMetodoPago = new JComboBox<>(new String[]{"Efectivo"});
         cbMetodoPago.setPreferredSize(new Dimension(0, 36));
@@ -563,6 +586,17 @@ public class IFrmPuntoVenta extends JInternalFrame {
                         "Por ley de SUNAT, compras a partir de S/ 700.00 exigen DNI o RUC.\n\nPor favor, busque o registre el documento del cliente para continuar.", 
                         "Regla SUNAT (FR-051)", 
                         JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Validación de Comprobantes (CRM Sincronizado)
+                String tipoComprobante = cbComprobante.getSelectedItem().toString();
+                if (tipoComprobante.equals("Boleta Nominal") && lblNombreCliente.getText().equals("Consumidor Final")) {
+                    JOptionPane.showMessageDialog(this, "Debe buscar y registrar el DNI del cliente para emitir una Boleta Nominal.", "Datos requeridos", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                if (tipoComprobante.equals("Factura") && (lblNombreCliente.getText().equals("Consumidor Final") || txtDni.getText().trim().length() != 11)) {
+                    JOptionPane.showMessageDialog(this, "Debe buscar y registrar el RUC válido (11 dígitos) de la empresa para emitir una Factura.", "Datos requeridos", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
 

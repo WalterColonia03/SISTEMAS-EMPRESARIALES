@@ -103,4 +103,25 @@ public class KardexDAO {
         }
         return lista;
     }
+
+    /**
+     * Registra un nuevo movimiento de Kardex (ENTRADA o SALIDA) en la BD.
+     * Implementa: FR-004 — registro de movimientos de inventario.
+     */
+    public boolean guardar(Kardex k) {
+        String sql = "INSERT INTO tb_kardex (idProducto, tipoMovimiento, cantidad, fecha, motivo) " +
+                     "VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, k.getIdProducto());
+            ps.setString(2, k.getTipoMovimiento());
+            ps.setInt(3, k.getCantidad());
+            ps.setString(4, k.getFecha());
+            ps.setString(5, k.getMotivo());
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            LoggerGlobal.error("KardexDAO.guardar() falló para idProducto=" + k.getIdProducto(), ex);
+            return false;
+        }
+    }
 }

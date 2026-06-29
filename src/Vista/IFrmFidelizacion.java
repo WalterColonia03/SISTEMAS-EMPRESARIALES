@@ -132,7 +132,7 @@ public class IFrmFidelizacion extends JInternalFrame {
         // Asumiendo que tenemos una tb_venta con el cliente
         modelHistorial.setRowCount(0);
         // Para la demo o si VentaDAO no tiene buscarPorCliente, haremos un query directo
-        String sql = "SELECT idVenta, fecha, total FROM tb_venta WHERE cliente LIKE ?";
+        String sql = "SELECT idVenta, fecha, total, metodoPago FROM tb_venta WHERE cliente LIKE ?";
         
         // Primero buscamos el nombre del cliente basado en su DNI
         ClienteDAO cdao = new ClienteDAO();
@@ -154,11 +154,12 @@ public class IFrmFidelizacion extends JInternalFrame {
              ps.setString(1, "%" + nombreCliente + "%");
              try (ResultSet rs = ps.executeQuery()) {
                  while (rs.next()) {
+                     String mPago = rs.getString("metodoPago");
                      modelHistorial.addRow(new Object[]{
                          rs.getInt("idVenta"),
                          rs.getString("fecha"),
                          String.format("S/ %.2f", rs.getDouble("total")),
-                         "Efectivo" // Mockup para método de pago temporal
+                         mPago != null && !mPago.isEmpty() ? mPago : "No registrado"
                      });
                  }
              }

@@ -31,12 +31,14 @@ public class InicializarProyecto {
             InitDB4.main(args);
             InitDB5_MigrarDecimal.main(args);
             InitDB6_MetodoPago.main(args);
+            InitDB7_UsuariosSeed.main(args);
             InitDB_Bitacora.main(args);
-            
             System.out.println("✅ Estructura de tablas creada.");
             
-            System.out.println("Iniciando migración de datos iniciales...");
-            Modelo.MigracionDB.main(args);
+            Modelo.MigracionDB.crearTablas(); // Solo crea las tablas de tb_usuario, etc, sin migrarlas desde TXT
+            
+            System.out.println("Los archivos TXT han sido desvinculados del proyecto.");
+            System.out.println("MySQL es ahora la ÚNICA fuente de verdad. Por favor, gestione los usuarios desde el sistema o directamente en la BD.");
             System.out.println("✅ Inicialización completada con éxito. Ya puedes iniciar sesión.");
         } catch (Exception e) {
             System.out.println("❌ Error durante la creación de tablas: " + e.getMessage());

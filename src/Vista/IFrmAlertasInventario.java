@@ -177,9 +177,10 @@ public class IFrmAlertasInventario extends JInternalFrame {
             modelSinRotacion.addRow(row);
         }
         
-        // 3. Alertas Próximos a Vencer (Placeholder hasta R4)
-        modelPorVencer.addRow(new Object[]{
-            "Ejemplo Producto Lácteo", "LOTE-123", "30/06/2026", "3", "45"
-        });
+        // 3. Alertas Próximos a Vencer (FR-052)
+        List<Object[]> porVencer = reportesDAO.productosProximosAVencer();
+        for(Object[] row : porVencer) {
+            modelPorVencer.addRow(row);
+        }
     }
 }

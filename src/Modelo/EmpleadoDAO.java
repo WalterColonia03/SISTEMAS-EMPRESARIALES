@@ -94,4 +94,31 @@ public class EmpleadoDAO {
         }
         return "EMP001";
     }
+
+    public int getVacacionesAcumuladas(String codigo) {
+        String sql = "SELECT vacacionesAcumuladas FROM empleados WHERE codigo=?";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, codigo);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException ex) {
+            LoggerGlobal.error("EmpleadoDAO.getVacacionesAcumuladas() fallo", ex);
+        }
+        return 0;
+    }
+
+    public boolean descontarVacaciones(String codigo, int dias) {
+        String sql = "UPDATE empleados SET vacacionesAcumuladas = vacacionesAcumuladas - ? WHERE codigo=?";
+        try (Connection conn = ConexionDB.getConexion();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, dias);
+            ps.setString(2, codigo);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            LoggerGlobal.error("EmpleadoDAO.descontarVacaciones() fallo", ex);
+            return false;
+        }
+    }
 }

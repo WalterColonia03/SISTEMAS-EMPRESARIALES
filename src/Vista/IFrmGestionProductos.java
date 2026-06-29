@@ -61,7 +61,7 @@ public class IFrmGestionProductos extends JInternalFrame {
         cargarCategorias();
         attachEvents();
         cargarTabla();
-        setSize(1050, 750);
+        setSize(1100, 720);
         putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
     }
 
@@ -73,15 +73,13 @@ public class IFrmGestionProductos extends JInternalFrame {
     }
 
     private void initComponents() {
-        txtBuscar = UIKit.textField();
-        txtBuscar.setPreferredSize(new Dimension(200, 36));
-        txtBuscar.putClientProperty("JTextField.placeholderText", "Buscar por nombre...");
+        txtBuscar = UIKit.searchField("Buscar por nombre o descripción...");
+        txtBuscar.setPreferredSize(new Dimension(260, 38));
         
-        cbFiltroCategoria = new JComboBox<>();
-        cbFiltroCategoria.setFont(UIKit.BODY);
-        cbFiltroCategoria.setPreferredSize(new Dimension(160, 36));
+        cbFiltroCategoria = UIKit.filterCombo(new String[]{"Todas las Categorías"});
+        cbFiltroCategoria.setPreferredSize(new Dimension(180, 38));
 
-        btnBuscar = UIKit.secondaryButton("Buscar / Filtrar");
+        btnBuscar = UIKit.secondaryButton("Filtrar");
 
         String[] columns = {"ID", "Nombre", "Categoría", "Cant.", "Precio", "Lote", "Vencimiento", "Estado"};
         modelProductos = new DefaultTableModel(columns, 0) {
@@ -177,7 +175,7 @@ public class IFrmGestionProductos extends JInternalFrame {
                 UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
 
         getContentPane().add(
-                UIKit.screenHeader("Gestión de Productos", "Inventario  >  Productos"),
+                UIKit.screenHeader("Productos", "Inicio / Productos", btnLimpiar),
                 BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));

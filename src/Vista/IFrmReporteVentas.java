@@ -105,32 +105,17 @@ public class IFrmReporteVentas extends JInternalFrame {
         lblTotalVendido.setFont(UIKit.H1);
         lblTotalVendido.setForeground(UIKit.TEXT_PRIMARY);
 
-        btnExportarExcel = new JButton("⬇ Exportar");
-        btnExportarExcel.setFont(UIKit.BODY_BOLD);
-        btnExportarExcel.setBackground(new Color(30, 160, 100)); // Verde excel
-        btnExportarExcel.setForeground(Color.WHITE);
-        btnExportarExcel.setFocusPainted(false);
-        btnExportarExcel.setBorder(new EmptyBorder(8, 16, 8, 16));
-        btnExportarExcel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnExportarExcel = UIKit.primaryButton("⬇ Exportar PDF");
     }
 
     private void buildLayout() {
         getContentPane().setLayout(new BorderLayout());
-        getContentPane().setBackground(Color.WHITE);
+        getContentPane().setBackground(UIKit.BG_APP);
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JPanel pnlHeader = new JPanel(new BorderLayout());
-        pnlHeader.setOpaque(false);
-        
-        JLabel lblTitulo = new JLabel("Historial de Ventas");
-        lblTitulo.setFont(UIKit.H1);
-        lblTitulo.setForeground(UIKit.TEXT_PRIMARY);
-        pnlHeader.add(lblTitulo, BorderLayout.WEST);
-        
-        JPanel pnlExport = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        pnlExport.setOpaque(false);
-        pnlExport.add(btnExportarExcel);
-        pnlHeader.add(pnlExport, BorderLayout.EAST);
+        // Encabezado con patrón referencia (breadcrumb + título + acción)
+        getContentPane().add(UIKit.screenHeader("Historial de Ventas",
+            "Inicio / Ventas / Historial", btnExportarExcel), BorderLayout.NORTH);
 
         JPanel pnlFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         pnlFiltros.setOpaque(false);
@@ -159,14 +144,14 @@ public class IFrmReporteVentas extends JInternalFrame {
         pnlFiltros.add(grpMetodo);
         pnlFiltros.add(grpBotones);
 
-        JPanel pnlTop = new JPanel(new BorderLayout());
-        pnlTop.setOpaque(false);
-        pnlTop.add(pnlHeader, BorderLayout.NORTH);
-        pnlTop.add(pnlFiltros, BorderLayout.CENTER);
+        JPanel pnlCentro = new JPanel(new BorderLayout(0, UIKit.SPACE_SM));
+        pnlCentro.setOpaque(false);
+        pnlCentro.add(pnlFiltros, BorderLayout.NORTH);
 
         JScrollPane scroll = new JScrollPane(tblVentas);
-        scroll.setBorder(BorderFactory.createLineBorder(new Color(230, 230, 230)));
-        scroll.getViewport().setBackground(Color.WHITE);
+        scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
+        scroll.getViewport().setBackground(UIKit.BG_CARD);
+        pnlCentro.add(scroll, BorderLayout.CENTER);
 
         JPanel pnlInferior = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 15));
         pnlInferior.setOpaque(false);
@@ -176,8 +161,7 @@ public class IFrmReporteVentas extends JInternalFrame {
         pnlInferior.add(t1);
         pnlInferior.add(lblTotalVendido);
 
-        getContentPane().add(pnlTop, BorderLayout.NORTH);
-        getContentPane().add(scroll, BorderLayout.CENTER);
+        getContentPane().add(pnlCentro, BorderLayout.CENTER);
         getContentPane().add(pnlInferior, BorderLayout.SOUTH);
     }
 

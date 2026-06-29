@@ -168,24 +168,11 @@ public class IFrmDevoluciones extends JInternalFrame {
     
     private void cargarDevoluciones() {
         modelDevoluciones.setRowCount(0);
-        String sql = "SELECT idProducto, cantidad, fecha, motivo FROM tb_kardex WHERE motivo LIKE 'DEVOLUCION%' ORDER BY idMovimiento DESC LIMIT 30";
-        try (Connection conn = ConexionDB.getConexion();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                String motivoReal = rs.getString("motivo").replace("DEVOLUCION - ", "");
-                int idProd = rs.getInt("idProducto");
-                Producto p = new ProductoDAO().buscarPorNombre(String.valueOf(idProd)); // Dummy search to just get product, actually better to just show idProd or fetch
-                modelDevoluciones.addRow(new Object[]{
-                    "N/A", // Venta
-                    "Prod #" + idProd,
-                    rs.getInt("cantidad"),
-                    motivoReal,
-                    "Efectivo",
-                    rs.getString("fecha")
-                });
-            }
-        } catch (Exception e) {}
+        Modelo.DevolucionDAO ddao = new Modelo.DevolucionDAO();
+        java.util.List<Object[]> devoluciones = ddao.listarDevolucionesDesc();
+        for (Object[] row : devoluciones) {
+            modelDevoluciones.addRow(row);
+        }
     }
 
     private void attachEvents() {
@@ -195,41 +182,37 @@ public class IFrmDevoluciones extends JInternalFrame {
 
         btnProcesar.addActionListener(e -> {
             try {
-                int idProd = Integer.parseInt(txtIdProducto.getText());
-                int cant = Integer.parseInt(txtCantidad.getText());
-                String motivo = cbMotivo.getSelectedItem().toString();
-                String fecha = new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date());
-                
-                // 1. Restaurar stock
-                ProductoDAO pdao = new ProductoDAO();
-                Producto p = null;
-                for (Producto prod : pdao.listarTodos()) {
-                    if (prod.getIdProducto() == idProd) { p = prod; break; }
-                }
-                
-                if (p == null) {
-                    JOptionPane.showMessageDialog(this, "El Producto ID " + idProd + " no existe.");
+                if (txtIdVenta.getText().trim().isEmpty() || txtIdProducto.getText().trim().isEmpty() || txtCantidad.getText().trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Complete todos los campos.", "Error", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                
-                p.setCantidad(p.getCantidad() + cant);
-                pdao.actualizar(p);
-                
-                // 2. Registrar en Kardex
-                String sql = "INSERT INTO tb_kardex (idProducto, tipoMovimiento, cantidad, fecha, motivo) VALUES (?, 'ENTRADA', ?, ?, ?)";
-                try (Connection conn = ConexionDB.getConexion(); PreparedStatement ps = conn.prepareStatement(sql)) {
-                    ps.setInt(1, idProd);
-                    ps.setInt(2, cant);
-                    ps.setString(3, fecha);
-                    ps.setString(4, "DEVOLUCION - " + motivo);
-                    ps.executeUpdate();
-                }
-                
-                JOptionPane.showMessageDialog(this, "Devolución procesada. El stock del producto ha sido restaurado.");
+                int idVenta = Integer.parseInt(txtIdVenta.getText().trim());
+                int idProd = Integer.parseInt(txtIdProducto.getText().trim());
+                int cant = Integer.parseInt(txtCantidad.getText().trim());
+                String motivo = cbMotivo.getSelectedItem().toString();
+                String tipoReembolso = cbTipoReembolso.getSelectedItem().toString();
+                String fecha = new SimpleDateFormat("dd/MM/yyyy HH:mm").format(new Date());
+
+                Clases.Devolucion dev = new Clases.Devolucion();
+                dev.setIdVenta(idVenta);
+                dev.setIdProducto(idProd);
+                dev.setCantidad(cant);
+                dev.setMotivo(motivo);
+                dev.setTipoReembolso(tipoReembolso);
+                dev.setFecha(fecha);
+
+                Modelo.DevolucionDAO ddao = new Modelo.DevolucionDAO();
+                ddao.procesarDevolucion(dev);
+
+                JOptionPane.showMessageDialog(this, "Devolución procesada correctamente.\nSe ha restaurado el stock y registrado en Kardex/Flujo de Caja.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
                 btnLimpiar.doClick();
                 cargarDevoluciones();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Los campos ID Venta, ID Producto y Cantidad deben ser numéricos.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (java.sql.SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error de validación: " + ex.getMessage(), "Error en Devolución", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Verifique que el ID Producto y la Cantidad sean números válidos.");
+                JOptionPane.showMessageDialog(this, "Ocurrió un error inesperado.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 

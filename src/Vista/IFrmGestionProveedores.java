@@ -32,26 +32,41 @@ public class IFrmGestionProveedores extends JInternalFrame {
     private JButton btnEliminar;
     private JButton btnLimpiar;
 
+    private JComboBox<String> cbFiltroEstado;
+    private JButton btnNuevo;
+
     public IFrmGestionProveedores() {
         super("Gestión de Proveedores", true, true, true, true);
         initComponents();
         buildLayout();
         attachEvents();
-        setSize(960, 600);
+        setSize(1050, 650);
         putClientProperty("JInternalFrame.isPalette", Boolean.FALSE);
     }
 
     private void initComponents() {
-        txtBuscarRuc = UIKit.textField();
-        txtBuscarRuc.setPreferredSize(new Dimension(200, 36));
-        
-        btnBuscar = UIKit.secondaryButton("Buscar por RUC");
+        txtBuscarRuc = UIKit.searchField("Buscar por nombre o RUC...");
+        txtBuscarRuc.setPreferredSize(new Dimension(260, 38));
+        cbFiltroEstado = UIKit.filterCombo(new String[]{"Todos los estados", "Activo", "Inactivo"});
+        btnNuevo = UIKit.newButton("Nuevo Proveedor");
+        btnBuscar = UIKit.secondaryButton("Buscar");
 
         String[] columns = {"ID", "RUC", "Razón Social", "Contacto", "Teléfono", "Correo", "Dirección", "Estado"};
         modelProveedores = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
         tblProveedores = UIKit.styledTable(modelProveedores);
+        tblProveedores.getColumnModel().getColumn(0).setMaxWidth(50);
+        tblProveedores.getColumnModel().getColumn(7).setMaxWidth(110);
+        // Badge de estado en columna 7
+        tblProveedores.getColumnModel().getColumn(7).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+            @Override public Component getTableCellRendererComponent(
+                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+                JLabel badge = UIKit.statusBadge(v != null ? v.toString() : "");
+                badge.setBorder(new javax.swing.border.EmptyBorder(4,0,4,0));
+                return badge;
+            }
+        });
 
         txtId = UIKit.readOnlyField();
         txtRuc = UIKit.textField();
@@ -124,24 +139,24 @@ public class IFrmGestionProveedores extends JInternalFrame {
         ((JComponent) getContentPane()).setBorder(new EmptyBorder(
                 UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG, UIKit.SPACE_LG));
 
-        // ===== Encabezado =====
+        // Header con botón de acción
         getContentPane().add(
-                UIKit.screenHeader("Gestión de Proveedores", "Clientes y Proveedores  >  Proveedores"),
-                BorderLayout.NORTH);
+            UIKit.screenHeader("Proveedores", "Inicio / Proveedores", btnNuevo),
+            BorderLayout.NORTH);
 
         JPanel cuerpo = new JPanel(new BorderLayout(UIKit.SPACE_LG, 0));
         cuerpo.setOpaque(false);
 
-        // ── Tarjeta Izquierda: Tabla ──
+        // ── Tabla con filtros ──
         JPanel pnlTabla = UIKit.card();
         pnlTabla.setLayout(new BorderLayout(0, UIKit.SPACE_SM));
 
-        JPanel pnlBusqueda = new JPanel(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_SM, 0));
-        pnlBusqueda.setOpaque(false);
-        pnlBusqueda.add(txtBuscarRuc);
-        pnlBusqueda.add(btnBuscar);
-        
-        pnlTabla.add(UIKit.sectionHeader("Listado de Proveedores", pnlBusqueda), BorderLayout.NORTH);
+        JPanel pnlFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, UIKit.SPACE_SM, 0));
+        pnlFiltros.setOpaque(false);
+        pnlFiltros.add(txtBuscarRuc);
+        pnlFiltros.add(cbFiltroEstado);
+        pnlFiltros.add(btnBuscar);
+        pnlTabla.add(pnlFiltros, BorderLayout.NORTH);
         
         JScrollPane scroll = new JScrollPane(tblProveedores);
         scroll.setBorder(BorderFactory.createLineBorder(UIKit.BORDER));
